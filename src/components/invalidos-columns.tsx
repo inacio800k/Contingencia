@@ -149,14 +149,16 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                 if (existingRecord) {
                     // Update existing record
                     console.log('[StatusCell invalidos] Record exists, updating:', existingRecord.id)
+                    // Do NOT update the ID of an existing record
+                    const { id, ...dataToUpdate } = dataToInsert
                     const { error } = await supabase
                         .from('registros')
-                        .update(dataToInsert)
+                        .update(dataToUpdate)
                         .eq('id', existingRecord.id)
                     insertError = error
                 } else {
                     // Insert new record
-                    console.log('[StatusCell invalidos] Inserting new record')
+                    console.log('[StatusCell invalidos] Inserting new record with ID:', dataToInsert.id)
                     const { error } = await supabase
                         .from('registros')
                         .insert(dataToInsert)
