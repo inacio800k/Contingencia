@@ -38,6 +38,7 @@ import { DatePickerCell as DatePickerCellComponent } from '@/components/date-pic
 declare module '@tanstack/react-table' {
     interface TableMeta<TData> {
         role?: 'admin' | 'user' | null
+        operator?: string
         selectedCell?: { rowId: string; columnId: string } | null
         editingCell?: { rowId: string; columnId: string; replaceContent: boolean } | null
         onCellSelect?: (rowId: string, columnId: string) => void
@@ -856,7 +857,8 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                     body: JSON.stringify({
                         id: row.original.id,
                         direction: 'to_invalidos',
-                        status: newValue
+                        status: newValue,
+                        operator: table.options.meta?.operator || 'Sistema'
                     })
                 })
 

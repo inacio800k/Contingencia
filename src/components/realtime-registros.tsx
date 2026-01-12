@@ -17,6 +17,7 @@ export default function RealtimeRegistros({ onTableReady, onSaveVisibilityReady 
     const [loading, setLoading] = useState(true)
     const [preferencesLoaded, setPreferencesLoaded] = useState(false)
     const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null)
+    const [username, setUsername] = useState<string>('')
     const [columnPreferences, setColumnPreferences] = useState<any>(null)
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState | null>(null)
     const [updatedRowId, setUpdatedRowId] = useState<number | null>(null)
@@ -74,12 +75,13 @@ export default function RealtimeRegistros({ onTableReady, onSaveVisibilityReady 
             if (user) {
                 const { data } = await supabase
                     .from('profiles')
-                    .select('role, column_preferences, column_order')
+                    .select('role, column_preferences, column_order, username')
                     .eq('id', user.id)
                     .single()
 
                 if (data) {
                     setUserRole(data.role as 'admin' | 'user')
+                    setUsername(data.username || user.email || 'Sistema')
                     if (data.column_preferences && Object.keys(data.column_preferences).length > 0) {
                         setColumnPreferences(data.column_preferences)
                         // CRITICAL: Initialize ref with database value to prevent false "different" detections
@@ -276,7 +278,7 @@ export default function RealtimeRegistros({ onTableReady, onSaveVisibilityReady 
         <DataTable
             data={registros}
             columns={columns}
-            meta={{ role: userRole || 'user' }}
+            meta={{ role: userRole || 'user', operator: username }}
             initialColumnVisibility={initialVisibility}
             initialColumnOrder={initialColumnOrder}
             updatedRowId={updatedRowId}

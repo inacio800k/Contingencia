@@ -123,7 +123,8 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                     body: JSON.stringify({
                         id: row.original.id,
                         direction: 'to_registros',
-                        status: newValue
+                        status: newValue,
+                        operator: table.options.meta?.operator || 'Sistema'
                     })
                 })
 

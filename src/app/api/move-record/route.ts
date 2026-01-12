@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { id, direction, status } = body
+        const { id, direction, status, operator } = body
+        const op = operator || 'Sistema'
 
         if (!id || !direction || !status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -33,6 +34,25 @@ export async function POST(request: Request) {
 
             if (fetchError || !record) {
                 return NextResponse.json({ error: 'Record not found in registros' }, { status: 404 })
+            }
+
+            // 1.5. Log History (Explicitly)
+            const { error: historyError } = await supabase
+                .from('historico')
+                .insert({
+                    id_registro: id,
+                    operador: op,
+                    coluna_mudanca: 'status',
+                    valor_anterior: record.status,
+                    valor_posterior: status
+                })
+
+            if (historyError) {
+                console.error('[MoveAPI] History insert error:', historyError)
+                // Continue moving anyway, or fail? Failing safer to preserve consistency intent, but user wants move mainly.
+                // Let's log and continue, or failure? 
+                // Given the user wants history, let's log error but proceed, or maybe fail?
+                // Proceeding is better for UX, just log deeply.
             }
 
             // 2. Prepare data for Invalidos
@@ -74,6 +94,26 @@ export async function POST(request: Request) {
 
             if (fetchError || !record) {
                 return NextResponse.json({ error: 'Record not found in invalidos' }, { status: 404 })
+            }
+
+            // 1.5. Log History (Ideally we should log history even when restoring)
+            // Restore means insert into registros. The history trigger on registros usually handles updates, 
+            // but this is an INSERT. So new record. History usually tracks changes.
+            // If we want to track "Restored from invalidos", we might want to log it once inserted?
+            // Or log here? Since ID stays same?
+            // Let's log it here too for completeness if they want "history" of the flow.
+            const { error: historyError } = await supabase
+                .from('historico')
+                .insert({
+                    id_registro: id, // ID is preserved
+                    operador: op,
+                    coluna_mudanca: 'status',
+                    valor_anterior: record.status, // previous status in invalidos
+                    valor_posterior: status // new status in registros
+                })
+
+            if (historyError) {
+                console.error('[MoveAPI] History insert error (restore):', historyError)
             }
 
             // 2. Prepare data for Registros
