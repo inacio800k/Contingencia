@@ -847,61 +847,26 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
     const updateStatus = async (newValue: string) => {
         console.log('[StatusCell] Updating status:', { id: row.original.id, newValue })
 
-        // Check if moving to invalidos (Exact match 'Inválido')
-        const isInvalid = newValue.trim() === 'Inválido'
-        if (isInvalid) {
-            console.log('[StatusCell] Moving to invalidos via API:', row.original.id)
-            // alert('Debug: Moving to invalidos via API') // Temporary Debug
-            try {
-                const response = await fetch('/api/move-record', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: row.original.id,
-                        direction: 'to_invalidos',
-                        status: newValue,
-                        operator: table.options.meta?.operator || 'Sistema'
-                    })
-                })
+        const { data: returnedData, error } = await supabase
+            .from('registros')
+            .update({ status: newValue })
+            .eq('id', row.original.id)
+            .select()
 
-                const responseData = await response.json()
-
-                if (!response.ok) {
-                    throw new Error(responseData.error || 'API Error')
-                }
-
-                if (responseData.historyError) {
-                    console.error('[StatusCell] History Error:', responseData.historyError)
-                    alert('Aviso: Registro movido, mas houve erro ao salvar histórico: ' + responseData.historyError)
-                } else {
-                    console.log('[StatusCell] History saved:', responseData.historyDebug)
-                }
-
-                console.log('[StatusCell] Move API success [V_DEBUG_FINAL]')
-                // Realtime subscription handles UI updates
-
-            } catch (err: any) {
-                console.error('Error in move to invalidos:', err)
-                alert('Erro ao mover registro: ' + err.message)
-            }
+        if (error) {
+            console.error('Error updating status:', error)
+            alert('Erro ao atualizar: ' + error.message)
         } else {
-            // Standard Update
-            // alert('Debug: Standard Update (Not Invalid)') // Temporary Debug
-            const { data: returnedData, error } = await supabase
-                .from('registros')
-                .update({ status: newValue })
-                .eq('id', row.original.id)
-                .select()
-
-            if (error) {
-                console.error('Error updating status:', error)
-                alert('Erro ao atualizar: ' + error.message)
-            } else {
-                if (!returnedData || returnedData.length === 0) {
-                    console.warn('[StatusCell] Update succeeded but returned no data.')
+            // Log success for debugging
+            if (!returnedData || returnedData.length === 0) {
+                // Check if it was a move to Inválido (which deletes the record)
+                if (newValue.trim() === 'Inválido') {
+                    console.log('[StatusCell] Record moved to invalidos via trigger.')
                 } else {
-                    console.log('[StatusCell] Update successful:', returnedData[0])
+                    console.warn('[StatusCell] Update succeeded but returned no data.')
                 }
+            } else {
+                console.log('[StatusCell] Update successful:', returnedData[0])
             }
         }
     }
