@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { supabase } from "@/lib/supabase"
@@ -26,17 +27,24 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [history, setHistory] = useState<HistoryRecord[]>([])
+    const [selectedColumn, setSelectedColumn] = useState<string>("all")
     // const supabase = createClientComponentClient()
 
     const fetchHistory = async () => {
         setLoading(true)
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('historico')
                 .select('*')
                 .eq('id_registro', recordId)
                 .order('created_at', { ascending: false })
                 .limit(5)
+
+            if (selectedColumn && selectedColumn !== "all") {
+                query = query.eq('coluna_mudanca', selectedColumn)
+            }
+
+            const { data, error } = await query
 
             if (error) throw error
             setHistory(data || [])
@@ -54,6 +62,13 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
         }
     }
 
+    // Effect to refetch when filter changes while open
+    useEffect(() => {
+        if (open) {
+            fetchHistory()
+        }
+    }, [selectedColumn, open])
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -67,6 +82,30 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                 <DialogHeader>
                     <DialogTitle>Histórico de Alterações - ID {recordId}</DialogTitle>
                 </DialogHeader>
+
+                <div className="px-4 py-2">
+                    <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filtrar por coluna" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas as colunas</SelectItem>
+                            <SelectItem value="status">Status</SelectItem>
+                            <SelectItem value="info">Info</SelectItem>
+                            <SelectItem value="obs">Obs</SelectItem>
+                            <SelectItem value="waha_dia">Waha Dia</SelectItem>
+                            <SelectItem value="caiu_dia">Caiu Dia</SelectItem>
+                            <SelectItem value="operador">Operador</SelectItem>
+                            <SelectItem value="tipo_de_conta">Tipo de Conta</SelectItem>
+                            <SelectItem value="dispositivo">Dispositivo</SelectItem>
+                            <SelectItem value="instancia">Instância</SelectItem>
+                            <SelectItem value="numero">Número</SelectItem>
+                            <SelectItem value="codigo">Código</SelectItem>
+                            <SelectItem value="tipo_chip">Tipo Chip</SelectItem>
+                            <SelectItem value="valor">Valor</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                     {loading ? (
