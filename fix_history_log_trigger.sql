@@ -6,22 +6,24 @@ CREATE OR REPLACE FUNCTION public.move_invalid_registros()
 AS $function$
 DECLARE
     _operador_atual text;
+    _codigo_final text;
 BEGIN
     -- DEBUG LOG - Log EVERYTHING
-    RAISE LOG '[Trigger: move_invalid_registros] Trigger fired. ID: %, Status: ''%'', Old Status: ''%''', NEW.id, NEW.status, OLD.status;
+    RAISE LOG '[Trigger: move_invalid_registros] Fired. ID: %, Status: ''%''.', NEW.id, NEW.status;
+    RAISE LOG '[Trigger: move_invalid_registros] DEBUG DATA: NEW.codigo: ''%'', OLD.codigo: ''%''', NEW.codigo, OLD.codigo;
 
     -- Strict condition: Check if status IS 'Inválido' (trimmed)
     IF TRIM(NEW.status) = 'Inválido' AND (OLD.status IS DISTINCT FROM 'Inválido') THEN
         
-        RAISE LOG '[Trigger: move_invalid_registros] Condition Met (Strict). Moving ID: %', NEW.id;
+        -- Determine the code using fallback
+        _codigo_final := COALESCE(NEW.codigo, OLD.codigo);
+        RAISE LOG '[Trigger: move_invalid_registros] Selected Code: ''%''', _codigo_final;
 
         -- Get current user for history logging
         select coalesce(username, email) into _operador_atual from public.profiles where id = auth.uid();
         if _operador_atual is null then
             _operador_atual := 'Sistema/Desconhecido';
         end if;
-        
-        RAISE LOG '[Trigger: move_invalid_registros] Operator identified: %', _operador_atual;
 
         -- Explicitly log the status change to historico
         INSERT INTO public.historico (
@@ -38,7 +40,7 @@ BEGIN
             'status', 
             OLD.status::text, 
             NEW.status::text,
-            NEW.codigo
+            _codigo_final
         );
 
         -- Move to invalidos with Upsert (ON CONFLICT)
@@ -49,7 +51,7 @@ BEGIN
         )
         VALUES (
             NEW.id, NEW.operador, NEW.tipo_de_conta, NEW.tipo_chip, NEW.valor, NEW.dispositivo, 
-            NEW.instancia, NEW.numero, NEW.codigo, NEW.status, NEW.info, NEW.obs, NEW.waha_dia, 
+            NEW.instancia, NEW.numero, _codigo_final, NEW.status, NEW.info, NEW.obs, NEW.waha_dia, 
             COALESCE(NEW.caiu_dia, date_trunc('second', NOW())), 
             NEW.data, NEW.ultima_att
         )
@@ -72,11 +74,10 @@ BEGIN
         
         DELETE FROM registros WHERE id = NEW.id;
         
-        RAISE LOG '[Trigger: move_invalid_registros] Move complete for ID: %', NEW.id;
+        RAISE LOG '[Trigger: move_invalid_registros] Move complete.';
         RETURN NULL; 
     END IF;
     
-    RAISE LOG '[Trigger: move_invalid_registros] Condition NOT met for ID: %. Status was: ''%''', NEW.id, NEW.status;
     RETURN NEW;
 END;
 $function$
