@@ -877,7 +877,7 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                     console.log('[StatusCell] History saved:', responseData.historyDebug)
                 }
 
-                console.log('[StatusCell] Move API success')
+                console.log('[StatusCell] Move API success [V_DEBUG_FINAL]')
                 // Realtime subscription handles UI updates
 
             } catch (err: any) {

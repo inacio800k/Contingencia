@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: true,
-                message: 'Moved to invalidos',
+                message: 'Moved to invalidos [V_DEBUG_FINAL]',
                 historyError: historyError ? (historyError as any).message : null,
                 historyDebug: historyData
             })
