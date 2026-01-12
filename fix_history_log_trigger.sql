@@ -7,7 +7,7 @@ AS $function$
 DECLARE
     _operador_atual text;
 BEGIN
-    -- DEBUG LOG
+    -- DEBUG LOG - Log EVERYTHING
     RAISE LOG '[Trigger: move_invalid_registros] Trigger fired. ID: %, Status: ''%'', Old Status: ''%''', NEW.id, NEW.status, OLD.status;
 
     -- Strict condition: Check if status IS 'Inválido' (trimmed)
@@ -29,14 +29,16 @@ BEGIN
             operador, 
             coluna_mudanca, 
             valor_anterior, 
-            valor_posterior
+            valor_posterior,
+            codigo
         )
         VALUES (
             NEW.id, 
             _operador_atual, 
             'status', 
             OLD.status::text, 
-            NEW.status::text
+            NEW.status::text,
+            NEW.codigo
         );
 
         -- Move to invalidos with Upsert (ON CONFLICT)
