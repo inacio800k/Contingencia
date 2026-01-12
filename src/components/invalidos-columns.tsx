@@ -134,6 +134,7 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                     waha_dia: row.original.waha_dia,
                     caiu_dia: row.original.caiu_dia,
                     ultima_att: new Date().toISOString(), // Update timestamp
+                    id: row.original.id, // Preserve ID from invalidos table
                 }
 
                 // 2. Check if record with same codigo already exists in registros

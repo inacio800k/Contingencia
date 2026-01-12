@@ -283,12 +283,24 @@ export function DataTable<TData, TValue>({
             }
 
             // Default implementation: update directly in Supabase
-            const { error } = await supabase
+            console.log('[DataTable] Saving cell:', { tableName, rowId, columnId, newValue, updateData })
+
+            const { data: returnedData, error } = await supabase
                 .from(tableName)
                 .update(updateData)
                 .eq('id', rowId)
+                .select() // Return the updated row to verify
 
             if (error) throw error
+
+            if (!returnedData || returnedData.length === 0) {
+                console.warn('[DataTable] Update succeeded but returned no data. Check RLS or IDs.')
+                // Don't alert immediately as RLS might return empty data but still update? 
+                // Actually with .select(), if it updates, it should return data if RLS allows select (which it does).
+                // If it returns empty, it usually means no row matched the ID.
+            } else {
+                console.log('[DataTable] Save successful:', returnedData[0])
+            }
 
             // Check if we need to update metricas
             if (tableName === 'registros' && data.length > 0) {
@@ -306,9 +318,9 @@ export function DataTable<TData, TValue>({
                 }
             }
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error saving cell:', err)
-            alert('Erro ao salvar')
+            alert('Erro ao salvar: ' + (err.message || String(err)))
         } finally {
             // Exit edit mode
             setEditingCell(null)

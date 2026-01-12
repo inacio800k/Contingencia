@@ -844,15 +844,22 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
     const isSelected = selectedCell?.rowId === rowId && selectedCell?.columnId === columnId
 
     const updateStatus = async (newValue: string) => {
-        const { error } = await supabase
+        console.log('[StatusCell] Updating status:', { id: row.original.id, newValue })
+        const { data: returnedData, error } = await supabase
             .from('registros')
             .update({ status: newValue })
             .eq('id', row.original.id)
+            .select()
 
         if (error) {
             console.error('Error updating status:', error)
             alert('Erro ao atualizar: ' + error.message)
         } else {
+            if (!returnedData || returnedData.length === 0) {
+                console.warn('[StatusCell] Update succeeded but returned no data.')
+            } else {
+                console.log('[StatusCell] Update successful:', returnedData[0])
+            }
             // Update seller metrics when status changes
             // updateSellerMetrics()
             // NOTE: Commented out - Realtime subscription now handles seller metrics updates
