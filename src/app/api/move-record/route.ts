@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json()
         const { id, direction, status, operator } = body
-        const op = operator || 'Sistema'
+        const op = operator || 'Sistema (API)'
 
         if (!id || !direction || !status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

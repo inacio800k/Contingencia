@@ -848,8 +848,10 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
         console.log('[StatusCell] Updating status:', { id: row.original.id, newValue })
 
         // Check if moving to invalidos (Exact match 'Inválido')
-        if (newValue === 'Inválido') {
+        const isInvalid = newValue.trim() === 'Inválido'
+        if (isInvalid) {
             console.log('[StatusCell] Moving to invalidos via API:', row.original.id)
+            // alert('Debug: Moving to invalidos via API') // Temporary Debug
             try {
                 const response = await fetch('/api/move-record', {
                     method: 'POST',
@@ -876,6 +878,7 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
             }
         } else {
             // Standard Update
+            // alert('Debug: Standard Update (Not Invalid)') // Temporary Debug
             const { data: returnedData, error } = await supabase
                 .from('registros')
                 .update({ status: newValue })
