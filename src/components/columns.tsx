@@ -3,6 +3,7 @@
 import { Column, ColumnDef, Row, Table, CellContext } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ChevronsUpDown, Check, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { HistoryViewer } from "@/components/history-viewer"
 import { updateSellerMetrics } from '@/lib/update-metrics'
 import { Button } from '@/components/ui/button'
 import {
@@ -975,27 +976,18 @@ export const columns: ColumnDef<Registro>[] = [
     {
         accessorKey: 'id',
         header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
-        cell: ({ row, column, table }) => {
-            const rowId = String(row.original.id)
-            const columnId = column.id
-            const selectedCell = table.options.meta?.selectedCell
-            const onCellSelect = table.options.meta?.onCellSelect
-            const isSelected = selectedCell?.rowId === rowId && selectedCell?.columnId === columnId
-
+        cell: ({ row }) => {
             return (
-                <EditableCellComponent
-                    value={row.getValue('id')}
-                    rowId={rowId}
-                    columnId={columnId}
-                    isSelected={isSelected}
-                    isEditing={false}
-                    canEdit={false}
-                    onSelect={onCellSelect || (() => { })}
-                    onStartEdit={() => { }}
-                    onSave={async () => { }}
-                    onCancel={() => { }}
-                    className="w-[50px] justify-center"
-                />
+                <div className="flex justify-center">
+                    <HistoryViewer
+                        recordId={row.getValue('id')}
+                        trigger={
+                            <div className="cursor-pointer hover:underline decoration-primary decoration-2 underline-offset-2 font-medium text-primary hover:bg-muted/50 px-2 py-1 rounded transition-colors">
+                                {row.getValue('id')}
+                            </div>
+                        }
+                    />
+                </div>
             )
         },
         enableHiding: true,
