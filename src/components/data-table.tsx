@@ -280,15 +280,15 @@ export function DataTable<TData, TValue>({
 
             if (onRowUpdate) {
                 onRowUpdate(rowId, updateData as unknown as Partial<TData>)
-            } else {
-                // Default implementation: update directly in Supabase
-                const { error } = await supabase
-                    .from(tableName)
-                    .update(updateData)
-                    .eq('id', rowId)
-
-                if (error) throw error
             }
+
+            // Default implementation: update directly in Supabase
+            const { error } = await supabase
+                .from(tableName)
+                .update(updateData)
+                .eq('id', rowId)
+
+            if (error) throw error
 
             // Check if we need to update metricas
             if (tableName === 'registros' && data.length > 0) {
