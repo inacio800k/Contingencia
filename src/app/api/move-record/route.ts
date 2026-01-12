@@ -48,11 +48,16 @@ export async function POST(request: Request) {
                 })
                 .select() // Force return of data
 
-            console.log('[MoveAPI] History insert result:', { historyData, historyError })
-
             if (historyError) {
                 console.error('[MoveAPI] History insert error:', historyError)
+                throw new Error('History insert failed: ' + historyError.message)
             }
+
+            if (!historyData || historyData.length === 0) {
+                console.error('[MoveAPI] History insert returned no data!')
+                throw new Error('History insert returned no data. Possible RLS/Permission issue even with Service Key?')
+            }
+            console.log('[MoveAPI] History inserted successfully:', historyData[0])
 
             // 2. Prepare data for Invalidos
             const invalidosData = { ...record, status: status, ultima_att: new Date().toISOString() }
@@ -118,6 +123,7 @@ export async function POST(request: Request) {
 
             if (historyError) {
                 console.error('[MoveAPI] History insert error (restore):', historyError)
+                throw new Error('History insert failed (restore): ' + historyError.message)
             }
 
             // 2. Prepare data for Registros
