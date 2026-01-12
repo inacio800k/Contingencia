@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
             if (historyError) {
                 console.error('[MoveAPI] History insert error:', historyError)
-                throw new Error('History insert failed: ' + historyError.message)
+                throw new Error('History insert failed: ' + (historyError as any)?.message)
             }
 
             if (!historyData || historyData.length === 0) {
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
             return NextResponse.json({
                 success: true,
                 message: 'Moved to invalidos',
-                historyError: historyError ? historyError.message : null,
+                historyError: historyError ? (historyError as any).message : null,
                 historyDebug: historyData
             })
 
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Failed to delete from invalidos: ' + deleteError.message }, { status: 500 })
             }
 
-            return NextResponse.json({ success: true, message: 'Restored to registros', historyError: historyError ? historyError.message : null })
+            return NextResponse.json({ success: true, message: 'Restored to registros', historyError: historyError ? (historyError as any).message : null })
         }
 
         return NextResponse.json({ error: 'Invalid direction' }, { status: 400 })
