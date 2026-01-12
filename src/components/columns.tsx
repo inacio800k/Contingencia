@@ -873,6 +873,8 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
                 if (responseData.historyError) {
                     console.error('[StatusCell] History Error:', responseData.historyError)
                     alert('Aviso: Registro movido, mas houve erro ao salvar histórico: ' + responseData.historyError)
+                } else {
+                    console.log('[StatusCell] History saved:', responseData.historyDebug)
                 }
 
                 console.log('[StatusCell] Move API success')

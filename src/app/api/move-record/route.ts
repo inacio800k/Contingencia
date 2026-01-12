@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             }
 
             // 1.5. Log History (Explicitly)
-            const { error: historyError } = await supabase
+            const { data: historyData, error: historyError } = await supabase
                 .from('historico')
                 .insert({
                     id_registro: id,
@@ -46,6 +46,9 @@ export async function POST(request: Request) {
                     valor_anterior: record.status,
                     valor_posterior: status
                 })
+                .select() // Force return of data
+
+            console.log('[MoveAPI] History insert result:', { historyData, historyError })
 
             if (historyError) {
                 console.error('[MoveAPI] History insert error:', historyError)
@@ -76,7 +79,12 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Failed to delete from registros: ' + deleteError.message }, { status: 500 })
             }
 
-            return NextResponse.json({ success: true, message: 'Moved to invalidos', historyError: historyError ? historyError.message : null })
+            return NextResponse.json({
+                success: true,
+                message: 'Moved to invalidos',
+                historyError: historyError ? historyError.message : null,
+                historyDebug: historyData
+            })
 
         } else if (direction === 'to_registros') {
             console.log(`[MoveAPI] Moving ${id} from invalidos to registros`)
