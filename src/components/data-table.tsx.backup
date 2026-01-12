@@ -1,0 +1,328 @@
+'use client'
+
+import * as React from 'react'
+import {
+    ColumnDef,
+    ColumnFiltersState,
+    ColumnOrderState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFacetedRowModel,
+    getFacetedUniqueValues,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+    TableMeta,
+} from '@tanstack/react-table'
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    horizontalListSortingStrategy,
+} from '@dnd-kit/sortable'
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+
+import { DataTablePagination } from '@/components/data-table-pagination'
+import { DataTableHeaderCell } from '@/components/data-table-header-cell'
+import { Registro } from '@/types/schema'
+
+interface DataTableProps<TData, TValue> {
+    columns: ColumnDef<TData, TValue>[]
+    data: TData[]
+    meta?: TableMeta<TData>
+    initialColumnVisibility?: VisibilityState
+    initialColumnOrder?: ColumnOrderState
+    updatedRowId?: number | null
+    onTableReady?: (table: any) => void
+    onColumnVisibilityChange?: (visibility: VisibilityState) => void
+    onColumnOrderChange?: (order: ColumnOrderState) => void
+}
+
+export function DataTable<TData, TValue>({
+    columns,
+    data,
+    meta,
+    initialColumnVisibility,
+    initialColumnOrder,
+    updatedRowId,
+    onTableReady,
+    onColumnVisibilityChange,
+    onColumnOrderChange,
+}: DataTableProps<TData, TValue>) {
+    const [rowSelection, setRowSelection] = React.useState({})
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+        initialColumnVisibility || {}
+    )
+}
+    }, [initialColumnVisibility])
+
+// Update column order when initialColumnOrder changes
+React.useEffect(() => {
+    if (initialColumnOrder && initialColumnOrder.length > 0) {
+        setColumnOrder(initialColumnOrder)
+    }
+}, [initialColumnOrder])
+
+// Notify parent when column visibility changes
+React.useEffect(() => {
+    if (onColumnVisibilityChange) {
+        onColumnVisibilityChange(columnVisibility)
+    }
+}, [columnVisibility, onColumnVisibilityChange])
+
+// Notify parent when column order changes
+React.useEffect(() => {
+    if (onColumnOrderChange && columnOrder.length > 0) {
+        onColumnOrderChange(columnOrder)
+    }
+}, [columnOrder, onColumnOrderChange])
+
+// Scroll detection for sticky header
+React.useEffect(() => {
+    const syncColumnWidths = () => {
+        if (!headerRef.current || !fixedHeaderRef.current) return
+
+        const originalTable = headerRef.current.closest('table')
+        const fixedTable = fixedHeaderRef.current.querySelector('table')
+
+        if (!originalTable || !fixedTable) return
+
+        // Set fixed table to same width as original
+        const tableWidth = originalTable.getBoundingClientRect().width
+        fixedTable.style.width = `${tableWidth}px`
+
+        // Get all th elements from both headers
+        const originalHeaders = headerRef.current.querySelectorAll('th')
+        const fixedHeaders = fixedHeaderRef.current.querySelectorAll('th')
+
+        // Apply exact widths to each column
+        originalHeaders.forEach((originalTh, index) => {
+            if (fixedHeaders[index]) {
+                const rect = originalTh.getBoundingClientRect()
+                fixedHeaders[index].style.width = `${rect.width}px`
+                fixedHeaders[index].style.minWidth = `${rect.width}px`
+                fixedHeaders[index].style.maxWidth = `${rect.width}px`
+            }
+        })
+    }
+
+    const handleScroll = () => {
+        if (!tableContainerRef.current || !headerRef.current) return
+
+        const tableRect = tableContainerRef.current.getBoundingClientRect()
+        const headerHeight = 56 // Main page header height in pixels
+
+        // Show fixed header when table header scrolls above main header
+        if (tableRect.top <= headerHeight && tableRect.bottom > headerHeight + 50) {
+            if (!isHeaderFixed) {
+                setIsHeaderFixed(true)
+                // Sync immediately when becoming fixed
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        syncColumnWidths()
+                    })
+                })
+            }
+        } else {
+            setIsHeaderFixed(false)
+        }
+    }
+
+    // Sync horizontal scroll between table and fixed header
+    const syncHorizontalScroll = () => {
+        if (tableContainerRef.current && fixedHeaderRef.current) {
+            fixedHeaderRef.current.scrollLeft = tableContainerRef.current.scrollLeft
+        }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', () => {
+        if (isHeaderFixed) syncColumnWidths()
+    }, { passive: true })
+    tableContainerRef.current?.addEventListener('scroll', syncHorizontalScroll, { passive: true })
+
+    // Initial check
+    handleScroll()
+
+    return () => {
+        window.removeEventListener('scroll', handleScroll)
+        window.removeEventListener('resize', () => {
+            if (isHeaderFixed) syncColumnWidths()
+        })
+        tableContainerRef.current?.removeEventListener('scroll', syncHorizontalScroll)
+    }
+}, [isHeaderFixed])
+
+const table = useReactTable({
+    data,
+    columns,
+    state: {
+        sorting,
+        columnVisibility,
+        rowSelection,
+        columnFilters,
+        columnOrder,
+    },
+    initialState: {
+        pagination: {
+            pageSize: 9999, // Show all rows by default
+        },
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    meta,
+})
+
+// Pass table instance to parent
+React.useEffect(() => {
+    if (onTableReady) {
+        onTableReady(table)
+    }
+}, [table, onTableReady])
+
+// DnD sensors
+const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+)
+
+// Handle drag end
+const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+        const oldIndex = columnOrder.indexOf(active.id as string)
+        const newIndex = columnOrder.indexOf(over.id as string)
+
+        const newOrder = arrayMove(columnOrder, oldIndex, newIndex)
+        setColumnOrder(newOrder)
+    }
+}
+
+return (
+    <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+    >
+        <div className="space-y-4 pb-20">
+            {/* Fixed Header Clone - appears when scrolling */}
+            {isHeaderFixed && (
+                <div
+                    ref={fixedHeaderRef}
+                    className="fixed top-[56px] left-0 right-0 z-40 overflow-x-auto bg-gray-900 border-b border-gray-800"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    <style jsx>{`
+                            div::-webkit-scrollbar {
+                                display: none;
+                            }
+                        `}</style>
+                    <div className="rounded-md border-gray-800 bg-gray-900">
+                        <table className="w-full caption-bottom text-sm">
+                            <thead className="bg-gray-900">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <tr key={`fixed-${headerGroup.id}`} className="border-b border-gray-800">
+                                        {headerGroup.headers.map((header) => (
+                                            <th
+                                                key={`fixed-${header.id}`}
+                                                className="h-12 px-4 text-left align-middle font-medium text-gray-400 border-r border-gray-800/30 last:border-r-0"
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            <div ref={tableContainerRef} className="rounded-md border border-gray-800 bg-gray-900/50 overflow-x-auto">
+                <Table>
+                    <TableHeader ref={headerRef}>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id} className="border-b border-gray-800 bg-gray-900 hover:bg-gray-900">
+                                <SortableContext
+                                    items={columnOrder}
+                                    strategy={horizontalListSortingStrategy}
+                                >
+                                    {headerGroup.headers.map((header) => (
+                                        <DataTableHeaderCell key={header.id} header={header} />
+                                    ))}
+                                </SortableContext>
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && 'selected'}
+                                    className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${(row.original as Registro).id === updatedRowId ? 'animate-pulse bg-blue-900/20' : ''}`}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id} className="border-r border-gray-800/30 last:border-r-0">
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-24 text-center"
+                                >
+                                    Sem resultados.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+            <DataTablePagination table={table} />
+        </div>
+    </DndContext>
+)
+}
