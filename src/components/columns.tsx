@@ -848,78 +848,29 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
 
         // Check if moving to invalidos (Exact match 'Inválido')
         if (newValue === 'Inválido') {
-            console.log('[StatusCell] Moving to invalidos:', row.original.id)
+            console.log('[StatusCell] Moving to invalidos via API:', row.original.id)
             try {
-                // 1. Prepare data (preserving ID)
-                const dataToInsert = {
-                    data: row.original.data,
-                    operador: row.original.operador,
-                    tipo_de_conta: row.original.tipo_de_conta,
-                    dispositivo: row.original.dispositivo,
-                    instancia: row.original.instancia,
-                    numero: row.original.numero,
-                    codigo: row.original.codigo,
-                    status: newValue,
-                    info: row.original.info,
-                    obs: row.original.obs,
-                    tipo_chip: row.original.tipo_chip,
-                    valor: row.original.valor,
-                    waha_dia: row.original.waha_dia,
-                    caiu_dia: row.original.caiu_dia,
-                    ultima_att: new Date().toISOString(),
-                    id: row.original.id, // Preserve ID
+                const response = await fetch('/api/move-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: row.original.id,
+                        direction: 'to_invalidos',
+                        status: newValue
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'API Error')
                 }
 
-                // 2. Check if exists in invalidos (to avoid PK conflict)
-                const { data: existingInvalid } = await supabase
-                    .from('invalidos')
-                    .select('id')
-                    .eq('id', row.original.id)
-                    .single()
+                console.log('[StatusCell] Move API success')
+                // Realtime subscription handles UI updates
 
-                let insertError = null
-
-                if (existingInvalid) {
-                    // Update existing (excluding ID from update payload)
-                    console.log('[StatusCell] Record exists in invalidos, updating...')
-                    const { id, ...dataToUpdate } = dataToInsert
-                    const { error } = await supabase
-                        .from('invalidos')
-                        .update(dataToUpdate)
-                        .eq('id', row.original.id)
-                    insertError = error
-                } else {
-                    // Insert new
-                    console.log('[StatusCell] Inserting into invalidos...')
-                    const { error } = await supabase
-                        .from('invalidos')
-                        .insert(dataToInsert)
-                    insertError = error
-                }
-
-                if (insertError) {
-                    console.error('Error inserting/updating invalidos:', insertError)
-                    alert('Erro ao mover para inválidos: ' + insertError.message)
-                    return
-                }
-
-                // 3. Delete from registros
-                console.log('[StatusCell] Deleting from registros...')
-                const { error: deleteError } = await supabase
-                    .from('registros')
-                    .delete()
-                    .eq('id', row.original.id)
-
-                if (deleteError) {
-                    console.error('Error deleting from registros:', deleteError)
-                    alert('Erro ao remover de registros: ' + deleteError.message)
-                } else {
-                    console.log('[StatusCell] Move complete.')
-                }
-
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Error in move to invalidos:', err)
-                alert('Erro ao mover registro')
+                alert('Erro ao mover registro: ' + err.message)
             }
         } else {
             // Standard Update

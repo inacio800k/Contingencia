@@ -114,82 +114,30 @@ const StatusCell = (props: CellContext<Registro, unknown>) => {
 
         if (shouldMoveToRegistros) {
             // Move record from invalidos to registros
-            console.log('[StatusCell invalidos] Moving record to registros:', { id: row.original.id, newStatus: newValue })
+            console.log('[StatusCell invalidos] Moving record to registros via API:', { id: row.original.id, newStatus: newValue })
 
             try {
-                // 1. Build record data explicitly (without id)
-                const dataToInsert = {
-                    data: row.original.data,
-                    operador: row.original.operador,
-                    tipo_de_conta: row.original.tipo_de_conta,
-                    dispositivo: row.original.dispositivo,
-                    instancia: row.original.instancia,
-                    numero: row.original.numero,
-                    codigo: row.original.codigo,
-                    status: newValue, // Use the new status
-                    info: row.original.info,
-                    obs: row.original.obs,
-                    tipo_chip: row.original.tipo_chip,
-                    valor: row.original.valor,
-                    waha_dia: row.original.waha_dia,
-                    caiu_dia: row.original.caiu_dia,
-                    ultima_att: new Date().toISOString(), // Update timestamp
-                    id: row.original.id, // Preserve ID from invalidos table
+                const response = await fetch('/api/move-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: row.original.id,
+                        direction: 'to_registros',
+                        status: newValue
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'API Error')
                 }
 
-                // 2. Check if record with same codigo already exists in registros
-                const { data: existingRecord } = await supabase
-                    .from('registros')
-                    .select('id')
-                    .eq('codigo', row.original.codigo)
-                    .single()
-
-                let insertError = null
-
-                if (existingRecord) {
-                    // Update existing record
-                    console.log('[StatusCell invalidos] Record exists, updating:', existingRecord.id)
-                    // Do NOT update the ID of an existing record
-                    const { id, ...dataToUpdate } = dataToInsert
-                    const { error } = await supabase
-                        .from('registros')
-                        .update(dataToUpdate)
-                        .eq('id', existingRecord.id)
-                    insertError = error
-                } else {
-                    // Insert new record
-                    console.log('[StatusCell invalidos] Inserting new record with ID:', dataToInsert.id)
-                    const { error } = await supabase
-                        .from('registros')
-                        .insert(dataToInsert)
-                    insertError = error
-                }
-
-                if (insertError) {
-                    console.error('Error inserting/updating registros:', insertError)
-                    console.error('Data:', JSON.stringify(dataToInsert, null, 2))
-                    alert('Erro ao mover para registros: ' + insertError.message)
-                    return
-                }
-
-                // 3. Delete from invalidos table
-                const { error: deleteError } = await supabase
-                    .from('invalidos')
-                    .delete()
-                    .eq('id', row.original.id)
-
-                if (deleteError) {
-                    console.error('Error deleting from invalidos:', deleteError)
-                    alert('Erro ao remover de inválidos: ' + deleteError.message)
-                    return
-                }
-
-                console.log('[StatusCell invalidos] Record moved successfully!')
+                console.log('[StatusCell invalidos] Move API success')
                 // The realtime subscription will handle removing it from the UI
 
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Error moving record:', err)
-                alert('Erro ao mover registro')
+                alert('Erro ao mover registro: ' + err.message)
             }
         } else {
             // Just update the status in invalidos table
