@@ -78,24 +78,24 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-[600px] max-h-[80vh]">
-                <DialogHeader>
+            <DialogContent className="max-w-[700px] max-h-[90vh] flex flex-col gap-4">
+                <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Histórico de Alterações - ID {recordId}</DialogTitle>
                 </DialogHeader>
 
-                <div className="px-4 py-2">
+                <div className="px-1 py-1 flex-shrink-0">
                     <Select value={selectedColumn} onValueChange={setSelectedColumn}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Filtrar por coluna" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Todas as colunas</SelectItem>
+                            <SelectItem value="operador">Operador</SelectItem>
                             <SelectItem value="status">Status</SelectItem>
                             <SelectItem value="info">Info</SelectItem>
                             <SelectItem value="obs">Obs</SelectItem>
                             <SelectItem value="waha_dia">Waha Dia</SelectItem>
                             <SelectItem value="caiu_dia">Caiu Dia</SelectItem>
-                            <SelectItem value="operador">Operador</SelectItem>
                             <SelectItem value="tipo_de_conta">Tipo de Conta</SelectItem>
                             <SelectItem value="dispositivo">Dispositivo</SelectItem>
                             <SelectItem value="instancia">Instância</SelectItem>
@@ -107,13 +107,13 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                     </Select>
                 </div>
 
-                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                <ScrollArea className="flex-1 w-full rounded-md border p-4 min-h-[300px]">
                     {loading ? (
-                        <div className="flex justify-center items-center h-full">
+                        <div className="flex justify-center items-center h-full min-h-[200px]">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : history.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground space-y-2">
+                        <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center text-muted-foreground space-y-2">
                             <History className="h-10 w-10 opacity-20" />
                             <p>Nenhuma mudança encontrada nessa linha</p>
                         </div>
