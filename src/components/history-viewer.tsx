@@ -107,7 +107,7 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                     </Select>
                 </div>
 
-                <ScrollArea className="flex-1 w-full rounded-md border p-4 min-h-0">
+                <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
                     {loading ? (
                         <div className="flex justify-center items-center h-full min-h-[200px]">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
