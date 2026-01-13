@@ -38,7 +38,7 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                 .select('*')
                 .eq('id_registro', recordId)
                 .order('created_at', { ascending: false })
-                .limit(5)
+                .limit(20)
 
             if (selectedColumn && selectedColumn !== "all") {
                 query = query.eq('coluna_mudanca', selectedColumn)
@@ -78,7 +78,7 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-[700px] max-h-[90vh] flex flex-col gap-4">
+            <DialogContent className="max-w-[700px] max-h-[85vh] flex flex-col gap-4">
                 <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Histórico de Alterações - ID {recordId}</DialogTitle>
                 </DialogHeader>
@@ -107,7 +107,7 @@ export function HistoryViewer({ recordId, trigger }: HistoryViewerProps) {
                     </Select>
                 </div>
 
-                <ScrollArea className="flex-1 w-full rounded-md border p-4 min-h-[300px]">
+                <ScrollArea className="flex-1 w-full rounded-md border p-4 min-h-0">
                     {loading ? (
                         <div className="flex justify-center items-center h-full min-h-[200px]">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
