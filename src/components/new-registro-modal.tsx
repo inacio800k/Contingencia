@@ -131,8 +131,8 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
             const formatted = formatPhoneNumber(value)
             setFormData({ ...formData, numero: formatted })
         } else if (id === 'valor') {
-            // Allow only numbers and one comma
-            if (/^\d*,?\d*$/.test(value)) {
+            // Allow numbers, one comma, or one dot
+            if (/^\d*[.,]?\d*$/.test(value)) {
                 setFormData({ ...formData, valor: value })
             }
         } else if (id === 'tipo_chip') {
@@ -231,7 +231,8 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
         const dataToInsert = {
             ...dataWithoutId,
             dispositivo: finalDispositivo,
-            numero: cleanNumero
+            numero: cleanNumero,
+            valor: formData.valor ? formData.valor.replace(',', '.') : formData.valor
         }
 
         const { data, error } = await supabase

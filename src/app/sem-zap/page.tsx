@@ -10,7 +10,7 @@ import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
-interface RecondicionarItem {
+interface SemZapItem {
     dispositivo: string
     instancia: string
 }
@@ -33,7 +33,7 @@ type GroupedRegistros = {
     }
 }
 
-export default function RecondicionarPage() {
+export default function SemZapPage() {
     const [data, setData] = useState<GroupedRegistros>({})
     const [loading, setLoading] = useState(true)
     const [expandedInstances, setExpandedInstances] = useState<{ [key: string]: boolean }>({})
@@ -58,21 +58,21 @@ export default function RecondicionarPage() {
             try {
                 setLoading(true)
 
-                // 1. Fetch dispositivos with non-empty recondicionar array AND limit columns
+                // 1. Fetch dispositivos with non-empty sem_zap array AND limit columns
                 const { data: dispositivos, error: dispError } = await supabase
                     .from('dispositivos')
-                    .select('dispositivo, recondicionar, num_normal, num_business, clone_normal, clone_business, num_gb')
-                    .not('recondicionar', 'is', null)
+                    .select('dispositivo, sem_zap, num_normal, num_business, clone_normal, clone_business, num_gb')
+                    .not('sem_zap', 'is', null)
 
                 if (dispError) throw dispError
 
                 // Filter and collect target items
-                const targetItems: RecondicionarItem[] = []
+                const targetItems: SemZapItem[] = []
                 const deviceList: string[] = []
                 const limitsMap: { [key: string]: number } = {}
 
                 dispositivos?.forEach((row: any) => {
-                    if (Array.isArray(row.recondicionar) && row.recondicionar.length > 0) {
+                    if (Array.isArray(row.sem_zap) && row.sem_zap.length > 0) {
                         deviceList.push(row.dispositivo)
 
                         // Calculate limit for this device
@@ -83,7 +83,7 @@ export default function RecondicionarPage() {
                             (row.num_gb || 0)
                         limitsMap[row.dispositivo] = limit
 
-                        row.recondicionar.forEach((inst: string) => {
+                        row.sem_zap.forEach((inst: string) => {
                             targetItems.push({ dispositivo: row.dispositivo, instancia: inst })
                         })
                     }
@@ -159,7 +159,7 @@ export default function RecondicionarPage() {
                 setData(grouped)
 
             } catch (error) {
-                console.error("Error fetching recondicionar data:", error)
+                console.error("Error fetching sem zap data:", error)
             } finally {
                 setLoading(false)
             }
@@ -169,7 +169,7 @@ export default function RecondicionarPage() {
     }, [])
 
     if (loading) {
-        return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando dados de recondicionamento...</div>
+        return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando dados de Sem Zap...</div>
     }
 
     const deviceKeys = Object.keys(data).sort()
@@ -181,8 +181,12 @@ export default function RecondicionarPage() {
         const instances = data[device]
         Object.keys(instances).forEach(inst => {
             const records = instances[inst]
-            // Condition: ALL records must be 'Recondicionar' and there must be valid records
-            if (records.length > 0 && records.every(r => r.status.includes('Recondicionar'))) {
+            // Condition: ALL records must be 'Sem Zap' and there must be valid records
+            // Note: Checking for 'Sem Zap' (case insensitive match usually done in SQL, but here we do string check)
+            // The user existing code used ILIKE. In JS, we should use lower case check or loose include.
+            // Previous code: r.status.includes('Recondicionar')
+            // New code: r.status.toLowerCase().includes('sem zap')
+            if (records.length > 0 && records.every(r => r.status.toLowerCase().includes('sem zap'))) {
                 summaryRows.push({
                     device: device,
                     instance: inst,
@@ -207,14 +211,14 @@ export default function RecondicionarPage() {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center">
                 <div className="w-full max-w-4xl px-4 py-4 flex justify-start">
-                    <Link href="/">
+                    <Link href="/recondicionar">
                         <Button variant="outline" className="gap-2">
                             <ArrowLeft className="h-4 w-4" />
-                            Voltar para Dashboard
+                            Voltar para Recondicionar
                         </Button>
                     </Link>
                 </div>
-                <h2 className="text-2xl font-bold text-muted-foreground mt-8">Nenhum dispositivo para recondicionar</h2>
+                <h2 className="text-2xl font-bold text-muted-foreground mt-8">Nenhum dispositivo Sem Zap</h2>
                 <p className="text-sm text-muted-foreground mt-2">Tudo parece estar em ordem!</p>
             </div>
         )
@@ -224,32 +228,27 @@ export default function RecondicionarPage() {
         <div className="p-6 space-y-8 animate-in fade-in duration-500">
             {/* Header Actions */}
             <div className="flex items-center gap-4">
-                <Link href="/">
+                <Link href="/recondicionar">
                     <Button variant="outline" className="gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Voltar
-                    </Button>
-                </Link>
-                <Link href="/sem-zap">
-                    <Button variant="secondary" className="gap-2 bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border border-purple-500/20">
-                        Ver Sem Zap
                     </Button>
                 </Link>
             </div>
 
             {/* Summary Table */}
             {summaryRows.length > 0 && (
-                <Card className="border-red-500/20 bg-red-500/5 shadow-sm">
+                <Card className="border-purple-500/20 bg-purple-500/5 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-bold text-red-500 flex items-center gap-2">
-                                ⚠️ Instâncias Críticas (100% Recondicionar)
+                            <CardTitle className="text-lg font-bold text-purple-500 flex items-center gap-2">
+                                ⚠️ Instâncias Críticas (100% Sem Zap)
                             </CardTitle>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsSummaryVisible(!isSummaryVisible)}
-                                className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                                className="h-8 w-8 p-0 text-purple-500 hover:bg-purple-500/10 hover:text-purple-600"
                             >
                                 {isSummaryVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </Button>
@@ -259,7 +258,7 @@ export default function RecondicionarPage() {
                         <CardContent className="p-0 animate-in slide-in-from-top-2 duration-200">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b-red-500/20">
+                                    <TableRow className="hover:bg-transparent border-b-purple-500/20">
                                         <TableHead className="text-gray-400 font-semibold">Dispositivo</TableHead>
                                         <TableHead className="text-gray-400 font-semibold">Instância</TableHead>
                                         <TableHead className="text-center text-gray-400 font-semibold">Caídos</TableHead>
@@ -268,10 +267,10 @@ export default function RecondicionarPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {summaryRows.map((row, idx) => (
-                                        <TableRow key={`${row.device}-${row.instance}`} className="hover:bg-red-500/10 border-b-red-500/10 last:border-0">
+                                        <TableRow key={`${row.device}-${row.instance}`} className="hover:bg-purple-500/10 border-b-purple-500/10 last:border-0">
                                             <TableCell className="font-medium text-gray-300">{row.device}</TableCell>
                                             <TableCell className="text-gray-300">{row.instance}</TableCell>
-                                            <TableCell className="text-center font-bold text-red-400">{row.count}</TableCell>
+                                            <TableCell className="text-center font-bold text-purple-400">{row.count}</TableCell>
                                             <TableCell className="text-center font-bold text-gray-300">{row.limit}</TableCell>
                                         </TableRow>
                                     ))}
@@ -284,7 +283,7 @@ export default function RecondicionarPage() {
 
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                    Recondicionar
+                    Sem Zap
                 </h1>
                 <Badge variant="outline" className="h-8 px-4 text-sm">
                     {deviceKeys.length} Dispositivos
@@ -297,9 +296,9 @@ export default function RecondicionarPage() {
                     const instanceKeys = Object.keys(instances).sort()
                     const isDeviceExpanded = expandedDevices[device]
 
-                    // Check if ANY instance in this device has ALL records marked as 'Recondicionar'
+                    // Check if ANY instance in this device has ALL records marked as 'Sem Zap'
                     const hasCriticalInstance = Object.values(instances).some(
-                        records => records.length > 0 && records.every(r => r.status.includes('Recondicionar'))
+                        records => records.length > 0 && records.every(r => r.status.toLowerCase().includes('sem zap'))
                     )
 
                     return (
@@ -339,29 +338,29 @@ export default function RecondicionarPage() {
                                         const isExpanded = expandedInstances[uniqueKey]
                                         const records = instances[instancia]
 
-                                        // Check if ALL records in this instance have 'Recondicionar' in status
-                                        const allRecondicionar = records.length > 0 && records.every(r => r.status.includes('Recondicionar'))
+                                        // Check if ALL records in this instance have 'Sem Zap' in status
+                                        const allSemZap = records.length > 0 && records.every(r => r.status.toLowerCase().includes('sem zap'))
 
                                         return (
                                             <div key={instancia} className={cn(
                                                 "border-b last:border-b-0 mb-6 last:mb-0 rounded-lg overflow-hidden",
                                                 // Instance Header Background Logic
-                                                allRecondicionar ? "bg-red-900/20" : (index % 2 === 0 ? "bg-card" : "bg-muted/5")
+                                                allSemZap ? "bg-purple-900/20" : (index % 2 === 0 ? "bg-card" : "bg-muted/5")
                                             )}>
                                                 <div className={cn(
                                                     "flex items-center justify-between p-4 transition-colors",
                                                     // Instance Header Hover/Active Logic
-                                                    allRecondicionar ? "hover:bg-red-900/30" : "hover:bg-muted/10"
+                                                    allSemZap ? "hover:bg-purple-900/30" : "hover:bg-muted/10"
                                                 )}>
                                                     <div className="flex items-center gap-4">
                                                         <h3 className={cn(
                                                             "text-sm font-semibold uppercase tracking-wider",
                                                             // Instance Name Color Logic
-                                                            allRecondicionar ? "text-yellow-400 font-bold" : "text-muted-foreground"
+                                                            allSemZap ? "text-purple-400 font-bold" : "text-muted-foreground"
                                                         )}>
                                                             Instância {instancia}
                                                         </h3>
-                                                        <Badge variant={allRecondicionar ? "destructive" : "secondary"} className="text-xs">
+                                                        <Badge variant={allSemZap ? "destructive" : "secondary"} className="text-xs">
                                                             {records.length} registros
                                                         </Badge>
                                                     </div>
@@ -391,14 +390,14 @@ export default function RecondicionarPage() {
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {records.map(reg => {
-                                                                        const isRecondicionar = reg.status.includes('Recondicionar')
+                                                                        const isSemZap = reg.status.toLowerCase().includes('sem zap')
                                                                         return (
                                                                             <TableRow
                                                                                 key={reg.id}
                                                                                 className={cn(
                                                                                     "hover:opacity-80 transition-opacity border-b-black/20",
-                                                                                    isRecondicionar
-                                                                                        ? "bg-red-500/10 hover:bg-red-500/20 text-red-100"
+                                                                                    isSemZap
+                                                                                        ? "bg-purple-500/10 hover:bg-purple-500/20 text-purple-100"
                                                                                         : "bg-green-500/10 hover:bg-green-500/20 text-green-100"
                                                                                 )}
                                                                             >

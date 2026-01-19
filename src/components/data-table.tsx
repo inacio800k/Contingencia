@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { updateSellerMetrics } from '@/lib/update-metrics'
+
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -302,21 +302,7 @@ export function DataTable<TData, TValue>({
                 console.log('[DataTable] Save successful:', returnedData[0])
             }
 
-            // Check if we need to update metricas
-            if (tableName === 'registros' && data.length > 0) {
-                const row = data.find((r: any) => String(r.id) === rowId) as Registro | undefined
-                if (row) {
-                    // Check if status changed and contains "Vendedor"
-                    if (columnId === 'status' && newValue?.includes('Vendedor')) {
-                        await updateSellerMetrics(supabase)
-                    }
-                    // Check if obs changed and status already has "Vendedor"
-                    if (columnId === 'obs' && row.status?.includes('Vendedor')) {
-                        // Pass current row with updated obs
-                        await updateSellerMetrics(supabase)
-                    }
-                }
-            }
+
 
         } catch (err: any) {
             console.error('Error saving cell:', err)
@@ -554,6 +540,15 @@ export function DataTable<TData, TValue>({
                                             rowClassName += ' bg-red-500/20 hover:bg-red-500/30'
                                         } else if (isNumberDuplicate) {
                                             rowClassName += ' bg-purple-500/20 hover:bg-purple-500/30'
+                                        }
+
+                                        // Apply custom row class from meta if provided
+                                        if (table.options.meta?.getRowClassName) {
+                                            // @ts-ignore
+                                            const customClass = table.options.meta.getRowClassName(row)
+                                            if (customClass) {
+                                                rowClassName += ` ${customClass}`
+                                            }
                                         }
 
                                         return (

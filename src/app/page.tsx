@@ -17,12 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Plus, ChevronDown, Replace, Link2, Cable, Monitor, Mail, RotateCcw } from 'lucide-react'
-import { TrocaNumeroModal } from '@/components/troca-numero-modal'
-import { ConexaoVendedoresModal } from '@/components/conexao-vendedores-modal'
-import { ConexaoWahaUazapiModal } from '@/components/conexao-waha-uazapi-modal'
-import { ProxyFormModal } from '@/components/proxy-form-modal'
-import { CriacaoEmailModal } from '@/components/criacao-email-modal'
+
+
+
+
+
 import { ZapsSobrandoNotification } from '@/components/zaps-sobrando-notification'
+import { FormulariosDropdown } from '@/components/formularios-dropdown'
+import { RespostasDropdown } from '@/components/respostas-dropdown'
 
 export default function Home() {
   const router = useRouter()
@@ -132,12 +134,7 @@ export default function Home() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link href="/metrics" className="w-full cursor-pointer">
-                    <ChartArea className="mr-2 h-4 w-4" />
-                    Métricas
-                  </Link>
-                </DropdownMenuItem>
+
                 {userRole === 'admin' && (
                   <>
                     <DropdownMenuItem asChild>
@@ -151,114 +148,33 @@ export default function Home() {
                         Inválidos
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/gerenciar-tabelas" className="w-full cursor-pointer">
+                        Gerenciar Tabelas
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/regras-metricas" className="w-full cursor-pointer">
+                        Regras das Métricas
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <FormulariosDropdown />
           </div>
 
           {/* Center: Main Actions with enhanced styling */}
           <div className="flex items-center gap-3">
             <div className="transform transition-all duration-300 hover:scale-105">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button>
-                    Formulários <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <NewRegistroModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Novo Registro
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <TrocaNumeroModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Replace className="mr-2 h-4 w-4" />
-                        Troca de Número
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <ConexaoVendedoresModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Link2 className="mr-2 h-4 w-4" />
-                        Conexão Vendedores
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <ConexaoWahaUazapiModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Cable className="mr-2 h-4 w-4" />
-                        Conexão Waha-Uazapi
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <ProxyFormModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Monitor className="mr-2 h-4 w-4" />
-                        Registro Proxy
-                      </DropdownMenuItem>
-                    }
-                  />
-                  <CriacaoEmailModal
-                    customTrigger={
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        Criação de Email
-                      </DropdownMenuItem>
-                    }
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NewRegistroModal />
             </div>
             <div className="transform transition-all duration-300 hover:scale-105">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button>
-                    Respostas <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/troca-numeros" className="w-full cursor-pointer">
-                      Troca de Números
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/conexao-vendedores" className="w-full cursor-pointer">
-                      Conexão Vendedores
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/conexao-waha" className="w-full cursor-pointer">
-                      Conexão Waha
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/conexao-uazapi" className="w-full cursor-pointer">
-                      Conexão Uazapi
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/tablets-proxy" className="w-full cursor-pointer">
-                      Tablets Proxy
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/respostas/criacao-email" className="w-full cursor-pointer">
-                      Criação Email
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <RespostasDropdown />
             </div>
+
             <div className="transform transition-all duration-300 hover:scale-105">
               <Button asChild>
                 <Link href="/recondicionar">

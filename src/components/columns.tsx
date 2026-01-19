@@ -4,7 +4,7 @@ import { Column, ColumnDef, Row, Table, CellContext } from '@tanstack/react-tabl
 import { ArrowDown, ArrowUp, ChevronsUpDown, Check, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HistoryViewer } from "@/components/history-viewer"
-import { updateSellerMetrics } from '@/lib/update-metrics'
+
 import { Button } from '@/components/ui/button'
 import {
     Popover,
@@ -46,6 +46,7 @@ declare module '@tanstack/react-table' {
         onCellStartEdit?: (rowId: string, columnId: string, replaceContent?: boolean) => void
         onCellSave?: (rowId: string, columnId: string, newValue: string | null) => Promise<void>
         onCellCancel?: () => void
+        getRowClassName?: (row: Row<TData>) => string
     }
 }
 
@@ -632,42 +633,7 @@ const CodigoCell = (props: CellContext<Registro, unknown>) => {
 
                                             if (showConnectUazapi) {
                                                 // --- UAZAPI LOGIC ---
-                                                // 2. Determine connection type (Nova vs Reconexão) for Uazapi
-                                                const { count, error: countError } = await supabase
-                                                    .from('conexao_wahapi')
-                                                    .select('*', { count: 'exact', head: true })
-                                                    .eq('numero', row.original.numero)
-                                                    .eq('conectado_em', 'Uazapi')
-
-                                                if (countError) {
-                                                    console.error('Error checking existing connections:', countError)
-                                                    alert('Erro ao verificar conexões: ' + countError.message)
-                                                    setIsCreating(false)
-                                                    return
-                                                }
-
-                                                const tipoConexao = (count && count > 0) ? 'Reconexão' : 'Nova'
-
-                                                // 3. Insert into conexao_wahapi
-                                                const { error: insertError } = await supabase
-                                                    .from('conexao_wahapi')
-                                                    .insert([{
-                                                        codigo: codigo,
-                                                        operador: operador,
-                                                        conectado_em: 'Uazapi',
-                                                        tipo_conta: row.original.tipo_de_conta,
-                                                        numero: row.original.numero,
-                                                        tipo_conexao: tipoConexao
-                                                    }])
-
-                                                if (insertError) {
-                                                    console.error('Error inserting conexao_wahapi:', insertError)
-                                                    alert('Erro ao registrar conexão: ' + insertError.message)
-                                                    setIsCreating(false)
-                                                    return
-                                                }
-
-                                                // 4. Update registros for Uazapi
+                                                // 2. Update registros for Uazapi
                                                 const today = new Date()
                                                 const year = today.getFullYear()
                                                 const month = String(today.getMonth() + 1).padStart(2, '0')
@@ -700,47 +666,11 @@ const CodigoCell = (props: CellContext<Registro, unknown>) => {
                                                 } else {
                                                     setShowQrDialog(false)
                                                     setShowPopover(false)
-                                                    updateSellerMetrics()
                                                 }
 
                                             } else {
                                                 // --- WAHA LOGIC (Existing) ---
-                                                // 2. Determine connection type (Nova vs Reconexão) for Waha
-                                                const { count, error: countError } = await supabase
-                                                    .from('conexao_wahapi')
-                                                    .select('*', { count: 'exact', head: true })
-                                                    .eq('numero', row.original.numero)
-                                                    .eq('conectado_em', 'Waha')
-
-                                                if (countError) {
-                                                    console.error('Error checking existing connections:', countError)
-                                                    alert('Erro ao verificar conexões: ' + countError.message)
-                                                    setIsCreating(false)
-                                                    return
-                                                }
-
-                                                const tipoConexao = (count && count > 0) ? 'Reconexão' : 'Nova'
-
-                                                // 3. Insert into conexao_wahapi
-                                                const { error: insertError } = await supabase
-                                                    .from('conexao_wahapi')
-                                                    .insert([{
-                                                        codigo: codigo,
-                                                        operador: operador,
-                                                        conectado_em: 'Waha',
-                                                        tipo_conta: row.original.tipo_de_conta,
-                                                        numero: row.original.numero,
-                                                        tipo_conexao: tipoConexao
-                                                    }])
-
-                                                if (insertError) {
-                                                    console.error('Error inserting conexao_wahapi:', insertError)
-                                                    alert('Erro ao registrar conexão: ' + insertError.message)
-                                                    setIsCreating(false)
-                                                    return
-                                                }
-
-                                                // 4. Update registros for Waha
+                                                // 2. Update registros for Waha
                                                 const today = new Date()
                                                 today.setHours(3, 0, 0, 0) // Set time to 03:00:00 as requested
 
@@ -767,7 +697,6 @@ const CodigoCell = (props: CellContext<Registro, unknown>) => {
                                                 } else {
                                                     setShowQrDialog(false)
                                                     setShowPopover(false)
-                                                    updateSellerMetrics()
                                                 }
                                             }
                                         } catch (e) {

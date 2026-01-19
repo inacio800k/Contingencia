@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { DataTable } from "@/components/data-table"
-import { columns } from "@/components/columns"
-import { Registro, Dispositivo, ZapsSobrando } from "@/types/schema"
+import { DataTableColumnHeader } from "@/components/columns"
+import { Registro, ZapsSobrando } from "@/types/schema"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
 
 const TIPO_CONTA_MAP: Record<keyof ZapsSobrando, string[]> = {
     "Whats": ["Whats 1", "Whats 2"],
@@ -18,11 +20,87 @@ const TIPO_CONTA_MAP: Record<keyof ZapsSobrando, string[]> = {
     "Whats GB": ["Whats GB"]
 }
 
-const DESIRED_COLUMNS = ['data', 'operador', 'dispositivo', 'instancia', 'tipo_de_conta', 'numero', 'status', 'codigo', 'tipo_chip']
-
-const zapsColumns = DESIRED_COLUMNS.map(key =>
-    columns.find(c => (c as any).accessorKey === key || c.id === key)
-).filter(Boolean) as any[]
+const readOnlyColumns: ColumnDef<Registro>[] = [
+    {
+        accessorKey: 'data',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="DATA" />,
+        cell: ({ row }) => {
+            const val = row.getValue('data')
+            if (!val) return <div className="w-[150px] text-muted-foreground">-</div>
+            const date = new Date(val as string)
+            return <div className="w-[150px]">{format(date, 'dd/MM/yyyy HH:mm:ss')}</div>
+        },
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'operador',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="OPERADOR" />,
+        cell: ({ row }) => <div>{row.getValue('operador')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'dispositivo',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="DISP" />,
+        cell: ({ row }) => <div>{row.getValue('dispositivo')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'instancia',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="INST" />,
+        cell: ({ row }) => <div>{row.getValue('instancia')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'tipo_de_conta',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="CONTA" />,
+        cell: ({ row }) => <div>{row.getValue('tipo_de_conta')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'numero',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="NÚMERO" />,
+        cell: ({ row }) => <div>{row.getValue('numero')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
+        cell: ({ row }) => <div>{row.getValue('status')}</div>,
+        filterFn: (row, id, filterValue) => {
+            const cellValue = row.getValue(id) as string
+            if (!cellValue) return filterValue.includes('')
+            return filterValue.includes(cellValue)
+        },
+    },
+    {
+        accessorKey: 'codigo',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="CÓDIGO" />,
+        cell: ({ row }) => <div>{row.getValue('codigo')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'tipo_chip',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="TIPO CHIP" />,
+        cell: ({ row }) => <div>{row.getValue('tipo_chip')}</div>,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+]
 
 export default function ZapsAMaisPage() {
     const [registros, setRegistros] = useState<Registro[]>([])
@@ -57,13 +135,6 @@ export default function ZapsAMaisPage() {
             }
 
             // 2. Build Query
-            // We need to construct a filter like:
-            // (dispositivo.eq.X, instancia.eq.Y, tipo_de_conta.in.(A,B)) OR (...)
-
-            // Supabase client doesn't support easy complex ORs with nested ANDs via simple chaining.
-            // We will use the `or` syntax with comma-separated filters.
-            // Format: and(dispositivo.eq.VAL,instancia.eq.VAL,tipo_de_conta.in.(VAL,VAL)),and(...)
-
             const orConditions: string[] = []
 
             validDispositivos.forEach((d: any) => {
@@ -80,17 +151,7 @@ export default function ZapsAMaisPage() {
                         const targetTypes = TIPO_CONTA_MAP[typeKey as keyof ZapsSobrando]
 
                         if (targetTypes) {
-                            // Syntax for Supabase .or():
-                            // dispositivo.eq.NAME,instancia.eq.NAME,tipo_de_conta.in.(TYPE1,TYPE2)
-                            // Wrapped in and()
-
                             const typesString = `(${targetTypes.map(t => `"${t}"`).join(',')})` // formatting for .in()
-
-                            // Note: We construct a separate condition for EACH type group within an instance
-                            // Actually, if an instance has multiple excesses (e.g. Whats and Business),
-                            // we need to combine them carefully or just push multiple OR conditions.
-                            // Pushing multiple OR conditions is safer and simpler.
-
                             const condition = `and(dispositivo.eq."${deviceName}",instancia.eq."${cleanInstancia}",tipo_de_conta.in.${typesString})`
                             orConditions.push(condition)
                         }
@@ -114,10 +175,15 @@ export default function ZapsAMaisPage() {
 
             if (regError) throw regError
 
-            // Sort Client-side: Dispositivo DESC, Instancia DESC, Tipo de Conta DESC
-            // Note: User asked for sorting: Dispositivo -> Instancia -> Tipo de Conta
-            // We assume ASCENDING for natural order, but typically dashboards might want data DESC?
-            // "ordene pelo dispositivo, depois pela instancia, e por fim pelo tipo de conta" usually implies ASC unless specified.
+            // Helper to get normalized type for sorting
+            const getNormalizedTipo = (t: string) => {
+                for (const [key, values] of Object.entries(TIPO_CONTA_MAP)) {
+                    if (values.includes(t)) return key
+                }
+                return t
+            }
+
+            // Sort Client-side: Dispositivo DESC, Instancia DESC, Tipo de Conta (Normalized) DESC
             const sortedRecords = (records || []).sort((a, b) => {
                 // 1. Dispositivo
                 const dispA = a.dispositivo || ''
@@ -131,10 +197,14 @@ export default function ZapsAMaisPage() {
                 const resInst = instA.localeCompare(instB, undefined, { numeric: true, sensitivity: 'base' })
                 if (resInst !== 0) return resInst
 
-                // 3. Tipo de Conta
-                const tipoA = a.tipo_de_conta || ''
-                const tipoB = b.tipo_de_conta || ''
-                return tipoA.localeCompare(tipoB, undefined, { numeric: true, sensitivity: 'base' })
+                // 3. Tipo de Conta (Normalized)
+                const normA = getNormalizedTipo(a.tipo_de_conta || '')
+                const normB = getNormalizedTipo(b.tipo_de_conta || '')
+                const resNorm = normA.localeCompare(normB, undefined, { numeric: true, sensitivity: 'base' })
+                if (resNorm !== 0) return resNorm
+
+                // 4. Tipo de Conta (Actual - strictly for consistent ordering within group)
+                return (a.tipo_de_conta || '').localeCompare(b.tipo_de_conta || '')
             })
 
             setRegistros(sortedRecords)
@@ -150,6 +220,41 @@ export default function ZapsAMaisPage() {
     useEffect(() => {
         fetchData()
     }, [])
+
+    const rowColorMap = useMemo(() => {
+        const map = new Map<string, string>()
+        let isEven = false
+        let lastKey = ''
+
+        // Same helper here for usage in map grouping
+        const getNormalizedTipo = (t: string) => {
+            for (const [key, values] of Object.entries(TIPO_CONTA_MAP)) {
+                if (values.includes(t)) return key
+            }
+            return t
+        }
+
+        registros.forEach(row => {
+            // Group Key now uses NORMALIZED type
+            const normType = getNormalizedTipo(row.tipo_de_conta || '')
+            const key = `${row.dispositivo || ''}-${row.instancia || ''}-${normType}`
+
+            if (key !== lastKey) {
+                isEven = !isEven
+                lastKey = key
+            }
+
+            // Use distinct styles for visual grouping
+            if (isEven) {
+                // Group A: Darker background + Blue Left Border
+                map.set(String(row.id), 'bg-blue-900/20 border-l-4 border-l-blue-500 hover:bg-blue-900/30')
+            } else {
+                // Group B: Transparent (Default) + Transparent Left Border (to align text)
+                map.set(String(row.id), 'bg-transparent border-l-4 border-l-transparent hover:bg-gray-800/30')
+            }
+        })
+        return map
+    }, [registros])
 
     return (
         <div className="container mx-auto py-10 space-y-8">
@@ -183,10 +288,13 @@ export default function ZapsAMaisPage() {
                 </CardHeader>
                 <CardContent>
                     <DataTable
-                        columns={zapsColumns}
+                        columns={readOnlyColumns}
                         data={registros}
                         disableStickyHeader={true}
-                        meta={{ userRole: 'admin' } as any}
+                        meta={{
+                            userRole: 'admin',
+                            getRowClassName: (row: any) => rowColorMap.get(String(row.original.id)) || ''
+                        } as any}
                         pageSize={500}
                     />
                 </CardContent>
