@@ -223,7 +223,7 @@ export default function MetricasPage() {
                         <Table>
                             <TableHeader className="bg-gray-900">
                                 <TableRow className="border-gray-800 hover:bg-gray-900">
-                                    <TableHead className="w-[300px] text-gray-400 font-bold border-r border-gray-800 text-center">
+                                    <TableHead className="w-[300px] text-white font-bold border-r border-gray-700 text-center sticky left-0 z-20 bg-black">
                                         Métrica
                                     </TableHead>
                                     {dates.map((date) => {
@@ -252,7 +252,13 @@ export default function MetricasPage() {
                                                     color: rule.cor_do_texto || undefined
                                                 }}
                                             >
-                                                <TableCell className="font-bold border-r border-gray-800 text-center" style={{ color: 'inherit' }}>
+                                                <TableCell
+                                                    className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                    style={{
+                                                        color: 'inherit',
+                                                        backgroundColor: rule.cor_de_fundo || '#111827' // Fallback to gray-900 if no color
+                                                    }}
+                                                >
                                                     {rule.nome_visualizacao}
                                                 </TableCell>
                                                 {dates.map((date) => (
@@ -274,7 +280,13 @@ export default function MetricasPage() {
                                                         color: rule.cor_do_texto || undefined
                                                     }}
                                                 >
-                                                    <TableCell className="font-bold border-r border-gray-800 text-center" style={{ color: 'inherit' }}>
+                                                    <TableCell
+                                                        className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                        style={{
+                                                            color: 'inherit',
+                                                            backgroundColor: rule.cor_de_fundo || '#111827'
+                                                        }}
+                                                    >
                                                         {rule.nome_visualizacao}
                                                     </TableCell>
                                                     {dates.map((date) => (
@@ -293,7 +305,13 @@ export default function MetricasPage() {
                                                             color: rule.cor_do_texto_subitem || undefined
                                                         }}
                                                     >
-                                                        <TableCell className="font-bold border-r border-gray-800 text-center" style={{ color: 'inherit' }}>
+                                                        <TableCell
+                                                            className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                            style={{
+                                                                color: 'inherit',
+                                                                backgroundColor: rule.cor_de_fundo_subitem || '#111827'
+                                                            }}
+                                                        >
                                                             {subitem.nome_visualizacao}
                                                         </TableCell>
                                                         {dates.map((date) => (
@@ -315,7 +333,13 @@ export default function MetricasPage() {
                                                     color: rule.cor_do_texto || undefined
                                                 }}
                                             >
-                                                <TableCell className="font-bold border-r border-gray-800 text-center" style={{ color: 'inherit' }}>
+                                                <TableCell
+                                                    className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                    style={{
+                                                        color: 'inherit',
+                                                        backgroundColor: rule.cor_de_fundo || '#111827'
+                                                    }}
+                                                >
                                                     {rule.nome_visualizacao}
                                                 </TableCell>
                                                 {dates.map((date) => (
@@ -330,7 +354,7 @@ export default function MetricasPage() {
                                             <TableRow key={index} className="hover:bg-transparent border-none">
                                                 <TableCell
                                                     colSpan={dates.length + 1}
-                                                    className="p-0 bg-black h-2"
+                                                    className="p-0 bg-black h-2 sticky left-0 z-10"
                                                 />
                                             </TableRow>
                                         )
