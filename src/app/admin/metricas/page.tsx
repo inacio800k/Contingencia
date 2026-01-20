@@ -144,7 +144,7 @@ export default function MetricasPage() {
                 throw new Error(data.error || 'Erro ao atualizar métricas')
             }
 
-            alert('Métricas atualizadas com sucesso!')
+            // alert('Métricas atualizadas com sucesso!')
             fetchData() // Refresh data
         } catch (error: any) {
             console.error('Error updating:', error)
