@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -155,9 +155,20 @@ export function DynamicFormModal({ open, onOpenChange, formName, fields, targetT
         return isValid
     }
 
+    const isSubmitting = useRef(false)
+
+    // Reset lock when open changes
+    useEffect(() => {
+        if (open) {
+            isSubmitting.current = false
+        }
+    }, [open])
+
     const handleSave = async () => {
         if (!validate()) return
+        if (isSubmitting.current) return
 
+        isSubmitting.current = true
         setLoading(true)
         try {
             const payload: Record<string, any> = {}
@@ -201,10 +212,12 @@ export function DynamicFormModal({ open, onOpenChange, formName, fields, targetT
 
             // alert('Registro salvo com sucesso!')
             onOpenChange(false)
+            // No need to reset isSubmitting here as modal closes
 
         } catch (error: any) {
             console.error('Error saving form:', error)
             alert('Erro ao salvar: ' + (error.message || 'Erro desconhecido'))
+            isSubmitting.current = false
         } finally {
             setLoading(false)
         }
