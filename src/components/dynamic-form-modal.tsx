@@ -199,7 +199,7 @@ export function DynamicFormModal({ open, onOpenChange, formName, fields, targetT
                 throw error
             }
 
-            alert('Registro salvo com sucesso!')
+            // alert('Registro salvo com sucesso!')
             onOpenChange(false)
 
         } catch (error: any) {
