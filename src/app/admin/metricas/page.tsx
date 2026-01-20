@@ -223,7 +223,7 @@ export default function MetricasPage() {
                         <Table>
                             <TableHeader className="bg-gray-900">
                                 <TableRow className="border-gray-800 hover:bg-gray-900">
-                                    <TableHead className="w-[300px] text-white font-bold border-r border-gray-700 text-center sticky left-0 z-20 bg-black">
+                                    <TableHead className="w-[300px] text-white font-bold border-r border-gray-600 text-center sticky left-0 z-20 bg-black shadow-[1px_0_0_0_#4b5563]">
                                         Métrica
                                     </TableHead>
                                     {dates.map((date) => {
@@ -253,7 +253,7 @@ export default function MetricasPage() {
                                                 }}
                                             >
                                                 <TableCell
-                                                    className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                    className="font-bold border-r border-gray-600 text-center sticky left-0 z-10 shadow-[1px_0_0_0_#4b5563]"
                                                     style={{
                                                         color: 'inherit',
                                                         backgroundColor: rule.cor_de_fundo || '#111827' // Fallback to gray-900 if no color
@@ -281,7 +281,7 @@ export default function MetricasPage() {
                                                     }}
                                                 >
                                                     <TableCell
-                                                        className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                        className="font-bold border-r border-gray-600 text-center sticky left-0 z-10 shadow-[1px_0_0_0_#4b5563]"
                                                         style={{
                                                             color: 'inherit',
                                                             backgroundColor: rule.cor_de_fundo || '#111827'
@@ -306,7 +306,7 @@ export default function MetricasPage() {
                                                         }}
                                                     >
                                                         <TableCell
-                                                            className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                            className="font-bold border-r border-gray-600 text-center sticky left-0 z-10 shadow-[1px_0_0_0_#4b5563]"
                                                             style={{
                                                                 color: 'inherit',
                                                                 backgroundColor: rule.cor_de_fundo_subitem || '#111827'
@@ -334,7 +334,7 @@ export default function MetricasPage() {
                                                 }}
                                             >
                                                 <TableCell
-                                                    className="font-bold border-r border-gray-700 text-center sticky left-0 z-10"
+                                                    className="font-bold border-r border-gray-600 text-center sticky left-0 z-10 shadow-[1px_0_0_0_#4b5563]"
                                                     style={{
                                                         color: 'inherit',
                                                         backgroundColor: rule.cor_de_fundo || '#111827'
