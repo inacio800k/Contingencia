@@ -11,7 +11,9 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft, RefreshCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -122,6 +124,36 @@ export default function MetricasPage() {
         }, 0)
     }
 
+    const router = useRouter()
+    const [updating, setUpdating] = useState(false)
+
+    // ... existing fetchData ... (fetching logic remains the same, just referenced)
+
+    // Re-use fetchData but ensure it's available in scope or moved up if needed.
+    // Ideally fetchData should be defined before this or inside component body which it is.
+
+    const handleUpdateMetrics = async () => {
+        try {
+            setUpdating(true)
+            const response = await fetch('/api/admin/update-metrics', {
+                method: 'POST'
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || 'Erro ao atualizar métricas')
+            }
+
+            alert('Métricas atualizadas com sucesso!')
+            fetchData() // Refresh data
+        } catch (error: any) {
+            console.error('Error updating:', error)
+            alert('Erro: ' + error.message)
+        } finally {
+            setUpdating(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-950 text-white">
@@ -133,8 +165,31 @@ export default function MetricasPage() {
     // Added font-bold to the root div to help cascade, and explicitly to table cells
     return (
         <div className="min-h-screen bg-gray-950 p-8 text-gray-100 font-bold">
-            <Card className="bg-gray-900 border-gray-800">
+            <div className="mb-6 flex justify-between items-center">
+                <Button
+                    variant="outline"
+                    onClick={() => router.push('/')}
+                    className="bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar ao Dashboard
+                </Button>
 
+                <Button
+                    onClick={handleUpdateMetrics}
+                    disabled={updating}
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                >
+                    {updating ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                    )}
+                    {updating ? 'Atualizando...' : 'Atualizar Métricas'}
+                </Button>
+            </div>
+
+            <Card className="bg-gray-900 border-gray-800">
                 <CardContent>
                     <div className="rounded-md border border-gray-800 overflow-x-auto">
                         <Table>
