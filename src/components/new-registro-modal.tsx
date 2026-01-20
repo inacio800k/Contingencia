@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import {
@@ -154,8 +154,21 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
         }
     }
 
+    const isSubmitting = useRef(false)
+
+    // Reset lock when modal opens
+    useEffect(() => {
+        if (open) {
+            isSubmitting.current = false
+        }
+    }, [open])
+
+    // ... (existing useEffects)
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (isSubmitting.current) return
 
         // Validate required fields
         if (!formData.operador.trim()) {
@@ -223,6 +236,7 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
             return // Keep modal open with current data
         }
 
+        isSubmitting.current = true
         setLoading(true)
 
         // Prepare data for insert - use clean numero without formatting
@@ -240,8 +254,6 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
             .insert([dataToInsert])
             .select()
 
-        setLoading(false)
-
         if (error) {
             console.error('Error creating registro:', error)
             // Provide more helpful error message for duplicate key errors
@@ -250,7 +262,13 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
             } else {
                 alert('Erro ao criar registro: ' + error.message)
             }
+            // Reset lock on error
+            setLoading(false)
+            isSubmitting.current = false
         } else {
+            // Success path - do NOT reset isSubmitting here to prevent double clicks while closing/submitting google form
+            // It will be reset when the modal re-opens or via unmount, but best to keep it locked until close.
+
             // Google Form Submission
             try {
                 const encodeForUrl = (str: string) => encodeURIComponent(str).replace(/%20/g, '+')
@@ -329,6 +347,7 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
                 // Don't block UI flow if analytics fails
             }
 
+            setLoading(false)
             setOpen(false)
             // Reset form
             setFormData({
@@ -345,6 +364,8 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
                 status: '',
                 obs: '',
             })
+            // Reset lock is not strictly needed here because modal closes, but for safety:
+            isSubmitting.current = false
         }
     }
 
