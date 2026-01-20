@@ -380,7 +380,7 @@ export function NewRegistroModal({ customTrigger }: NewRegistroModalProps) {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Novo Registro</DialogTitle>
                     <DialogDescription>
