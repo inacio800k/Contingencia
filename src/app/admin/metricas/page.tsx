@@ -14,8 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, ArrowLeft, RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
+import { format, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { DateRange } from "react-day-picker" // Install if needed, but it seems date-range-picker uses it so it should be there.
+import { DateRangePicker } from "@/components/date-range-picker"
 
 export default function MetricasPage() {
     const [loading, setLoading] = useState(true)
@@ -27,49 +29,7 @@ export default function MetricasPage() {
         fetchData()
     }, [])
 
-    const fetchData = async () => {
-        try {
-            setLoading(true)
 
-            // Fetch rules
-            const { data: rulesData, error: rulesError } = await supabase
-                .from('regras_das_metricas')
-                .select('regras_da_coluna')
-                .eq('id', 1)
-                .single()
-
-            if (rulesError) throw rulesError
-
-            // Fetch metrics data
-            const { data: metrics, error: metricsError } = await supabase
-                .from('metricas_dinamicas')
-                .select('*')
-                .order('created_at', { ascending: true })
-
-            if (metricsError) throw metricsError
-
-            // Process rules - including 'grupo', 'soma', 'linha'
-            const activeRules = (rulesData.regras_da_coluna || []).filter(
-                (rule: any) => ['individual', 'grupo', 'soma', 'linha'].includes(rule.tipo_item)
-            )
-            setRules(activeRules)
-
-            // Process metrics and dates
-            setMetricsData(metrics || [])
-
-            const uniqueDates = Array.from(new Set(
-                (metrics || []).map((m: any) =>
-                    format(new Date(m.created_at), 'dd/MM/yyyy')
-                )
-            ))
-            setDates(uniqueDates)
-
-        } catch (error) {
-            console.error('Error fetching metrics:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const getMetricRecord = (dateStr: string) => {
         return metricsData.find(m =>
@@ -126,11 +86,73 @@ export default function MetricasPage() {
 
     const router = useRouter()
     const [updating, setUpdating] = useState(false)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 6),
+        to: new Date(),
+    })
 
-    // ... existing fetchData ... (fetching logic remains the same, just referenced)
+    // Update dates whenever metricsData or dateRange changes
+    useEffect(() => {
+        if (!metricsData.length) {
+            setDates([])
+            return
+        }
 
-    // Re-use fetchData but ensure it's available in scope or moved up if needed.
-    // Ideally fetchData should be defined before this or inside component body which it is.
+        const filteredMetrics = metricsData.filter((m: any) => {
+            if (!dateRange?.from) return true // Show all if no range selected (or handle as user prefers, usually show all)
+
+            const metricDate = new Date(m.created_at)
+            const start = startOfDay(dateRange.from)
+            const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+
+            return isWithinInterval(metricDate, { start, end })
+        })
+
+        const uniqueDates = Array.from(new Set(
+            filteredMetrics.map((m: any) =>
+                format(new Date(m.created_at), 'dd/MM/yyyy')
+            )
+        ))
+        setDates(uniqueDates)
+    }, [metricsData, dateRange])
+
+    const fetchData = async () => {
+        try {
+            setLoading(true)
+
+            // Fetch rules
+            const { data: rulesData, error: rulesError } = await supabase
+                .from('regras_das_metricas')
+                .select('regras_da_coluna')
+                .eq('id', 1)
+                .single()
+
+            if (rulesError) throw rulesError
+
+            // Fetch metrics data
+            const { data: metrics, error: metricsError } = await supabase
+                .from('metricas_dinamicas')
+                .select('*')
+                .order('created_at', { ascending: true })
+
+            if (metricsError) throw metricsError
+
+            // Process rules - including 'grupo', 'soma', 'linha'
+            const activeRules = (rulesData.regras_da_coluna || []).filter(
+                (rule: any) => ['individual', 'grupo', 'soma', 'linha'].includes(rule.tipo_item)
+            )
+            setRules(activeRules)
+
+            // Process metrics
+            setMetricsData(metrics || [])
+            // Dates are now handled by useEffect
+
+        } catch (error) {
+            console.error('Error fetching metrics:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const handleUpdateMetrics = async () => {
         try {
@@ -175,18 +197,24 @@ export default function MetricasPage() {
                     Voltar ao Dashboard
                 </Button>
 
-                <Button
-                    onClick={handleUpdateMetrics}
-                    disabled={updating}
-                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-                >
-                    {updating ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <RefreshCcw className="mr-2 h-4 w-4" />
-                    )}
-                    {updating ? 'Atualizando...' : 'Atualizar Métricas'}
-                </Button>
+                <div className="flex gap-2">
+                    <DateRangePicker
+                        date={dateRange}
+                        setDate={setDateRange}
+                    />
+                    <Button
+                        onClick={handleUpdateMetrics}
+                        disabled={updating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                    >
+                        {updating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                        )}
+                        {updating ? 'Atualizando...' : 'Atualizar Métricas'}
+                    </Button>
+                </div>
             </div>
 
             <Card className="bg-gray-900 border-gray-800">
