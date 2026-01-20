@@ -247,7 +247,13 @@ export default function RealtimeRegistros({ onTableReady, onSaveVisibilityReady 
         if (columnOrder) {
             // Remove 'select' from saved order if present, then add it to the front
             const orderWithoutSelect = columnOrder.filter(col => col !== 'select')
-            return ['select', ...orderWithoutSelect]
+
+            // Find columns that exist in defaultOrder but are missing from saved columnOrder
+            const savedSet = new Set(columnOrder)
+            const missingColumns = defaultOrder.filter(col => !savedSet.has(col) && col !== 'select')
+
+            // Return select + saved + missing
+            return ['select', ...orderWithoutSelect, ...missingColumns]
         }
 
         // Return default order (select should already be first from columns definition)
