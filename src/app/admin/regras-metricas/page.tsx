@@ -232,6 +232,22 @@ export default function AdminRegrasMetricasPage() {
 
             // Success
             setDeletingColumn(null)
+
+            // Now refresh the metrics function (Salvar Regras logic)
+            try {
+                const rulesResponse = await fetch('/api/admin/generate-metrics-function', {
+                    method: 'POST',
+                })
+
+                if (!rulesResponse.ok) {
+                    console.error('Failed to update metrics function after delete')
+                    // Not throwing here to allow the UI to update at least the column list, 
+                    // but ideally we should notify
+                }
+            } catch (ruleErr) {
+                console.error('Error updating metrics function:', ruleErr)
+            }
+
             fetchColumns() // Refresh list
 
         } catch (err: any) {
@@ -531,7 +547,7 @@ export default function AdminRegrasMetricasPage() {
                                             <div className="flex items-center space-x-2">
                                                 <span className="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">{col.data_type}</span>
 
-                                                {(col.column_name !== 'id' && col.column_name !== 'created_at') && (
+                                                {(col.column_name !== 'id' && col.column_name !== 'created_at' && col.column_name !== 'valor') && (
                                                     deletingColumn === col.column_name ? (
                                                         <div className="flex items-center space-x-1 ml-2">
                                                             <span className="text-xs text-red-400 mr-1">Confirmar?</span>

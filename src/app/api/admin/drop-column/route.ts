@@ -25,6 +25,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
+        // Also delete the rule from regras_das_metricas
+        const { error: deleteRuleError } = await supabase
+            .from('regras_das_metricas')
+            .delete()
+            .eq('nome_da_coluna_metricas', column_name)
+
+        if (deleteRuleError) {
+            console.error('Error deleting rule:', deleteRuleError)
+            return NextResponse.json({ error: 'Column dropped but failed to delete rule: ' + deleteRuleError.message }, { status: 500 })
+        }
+
         return NextResponse.json({ success: true })
     } catch (error: any) {
         console.error('Unexpected error:', error)

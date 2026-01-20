@@ -158,6 +158,12 @@ export default function Home() {
                         Regras das Métricas
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/metricas" className="w-full cursor-pointer">
+                        <ChartArea className="mr-2 h-4 w-4" />
+                        Ver Métricas
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>

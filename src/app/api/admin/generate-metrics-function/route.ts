@@ -10,7 +10,7 @@ function buildWherePart(config: any, rules: any[]) {
     // 1. Valid Date Filter (Timezone Safe)
     if (config.apenas_hoje && config.coluna_data) {
         whereClauses.push(
-            `("${config.coluna_data}" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date`
+            `("${config.coluna_data}" AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date`
         )
     }
 
@@ -85,7 +85,7 @@ export async function POST() {
 
     UPDATE metricas_dinamicas
     SET "${colName}" = v_count
-    WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
+    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
 `
             } else if (rule.tipo_metrica === 'varios') {
                 // --- VARIOS (Returns JSON Array) ---
@@ -112,7 +112,7 @@ export async function POST() {
 
     UPDATE metricas_dinamicas
     SET "${colName}" = v_json_result
-    WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
+    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
 `
                 }
             }
@@ -131,11 +131,11 @@ BEGIN
     -- Fixed Logic for 'valor' (Sum of valor from registros for today)
     SELECT COALESCE(SUM(valor), 0) INTO v_valor_sum
     FROM "registros"
-    WHERE (data AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
+    WHERE (data AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
 
     UPDATE metricas_dinamicas
     SET "valor" = ROUND(v_valor_sum, 2)
-    WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
+    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;
 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

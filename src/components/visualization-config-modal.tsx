@@ -63,17 +63,17 @@ interface VisualizationConfigModalProps {
     groupMetrics: { name: string; items: any[] }[]
 }
 
-const ColorPickerTrigger = ({ color, onChange, label }: { color?: string, onChange: (c: string) => void, label?: string }) => {
+const ColorPickerTrigger = ({ color, onChange, label, className }: { color?: string, onChange: (c: string) => void, label?: string, className?: string }) => {
     return (
         <div className="flex flex-col gap-1">
             {label && <Label className="text-[10px] text-gray-400">{label}</Label>}
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full h-8 px-2 justify-start border-gray-600 bg-gray-800 text-xs">
+                    <Button variant="outline" className={cn("h-8 px-2 justify-start border-gray-600 bg-gray-800 text-xs w-full", className)}>
                         {color ? (
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full border border-gray-500" style={{ backgroundColor: color }}></div>
-                                <span className="text-gray-300">{color}</span>
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                <div className="w-4 h-4 rounded-full border border-gray-500 shrink-0" style={{ backgroundColor: color }}></div>
+                                <span className="text-gray-300 truncate">{color}</span>
                             </div>
                         ) : (
                             <span className="text-gray-500 italic">Sem cor</span>
@@ -174,9 +174,11 @@ function SortableItem({ item, onRemoveItem, onUpdateItem, handleGroupColumnChang
 
             <div className="flex flex-col gap-4 flex-1">
                 <div className="flex justify-between items-start gap-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                        {/* Common: Type Selection */}
-                        <div className="space-y-1">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1">
+                        {/* ROW 1: Type | Column/Spacer | Colors | SubItems Colors */}
+
+                        {/* 1. Type Selection (Common) - Span 3 */}
+                        <div className="space-y-1 md:col-span-3">
                             <Label className="text-xs text-gray-400">Tipo de Item</Label>
                             <Select
                                 value={item.type}
@@ -203,130 +205,131 @@ function SortableItem({ item, onRemoveItem, onUpdateItem, handleGroupColumnChang
                             </Select>
                         </div>
 
-                        {/* INDIVIDUAL LOGIC */}
+                        {/* 2. Middle Slot: Column Selection or Spacer - Span variable */}
                         {item.type === 'individual' && (
-                            <>
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-gray-400">Coluna (Métrica)</Label>
-                                    <Select
-                                        value={item.column}
-                                        onValueChange={(val) => onUpdateItem(item.id, { column: val })}
-                                    >
-                                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white h-9">
-                                            <SelectValue placeholder="Selecione a coluna" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700 text-white max-h-60">
-                                            <SelectItem value="valor">valor</SelectItem>
-                                            {availableMetrics.map((metricName: string) => (
-                                                <SelectItem key={metricName} value={metricName}>
-                                                    {metricName}
-                                                </SelectItem>
-                                            ))}
-                                            {availableMetrics.length === 0 && (
-                                                <div className="p-2 text-xs text-gray-500 text-center">Nenhuma métrica individual encontrada</div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-1 md:col-span-2">
-                                    <Label className="text-xs text-gray-400">Nome na Visualização</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={item.label || ''}
-                                            onChange={(e) => onUpdateItem(item.id, { label: e.target.value })}
-                                            placeholder="Ex: Total de Vendas"
-                                            className="bg-gray-800 border-gray-600 text-white h-9 flex-1"
-                                        />
-                                        <ColorPickerTrigger
-                                            color={item.bgColor}
-                                            onChange={(c) => onUpdateItem(item.id, { bgColor: c })}
-                                            label="Fundo"
-                                        />
-                                        <TextColorSelector
-                                            color={item.textColor}
-                                            onChange={(c) => onUpdateItem(item.id, { textColor: c })}
-                                            label="Texto"
-                                            previewBgColor={item.bgColor}
-                                        />
-                                    </div>
-                                </div>
-                            </>
+                            <div className="space-y-1 md:col-span-3">
+                                <Label className="text-xs text-gray-400">Coluna (Métrica)</Label>
+                                <Select
+                                    value={item.column}
+                                    onValueChange={(val) => onUpdateItem(item.id, { column: val })}
+                                >
+                                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white h-9">
+                                        <SelectValue placeholder="Selecione a coluna" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-gray-800 border-gray-700 text-white max-h-60">
+                                        <SelectItem value="valor">valor</SelectItem>
+                                        {availableMetrics.map((metricName: string) => (
+                                            <SelectItem key={metricName} value={metricName}>
+                                                {metricName}
+                                            </SelectItem>
+                                        ))}
+                                        {availableMetrics.length === 0 && (
+                                            <div className="p-2 text-xs text-gray-500 text-center">Nenhuma métrica individual encontrada</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {item.type === 'grupo' && (
+                            <div className="space-y-1 md:col-span-3">
+                                <Label className="text-xs text-gray-400">Coluna (Grupo)</Label>
+                                <Select
+                                    value={item.column}
+                                    onValueChange={(val) => handleGroupColumnChange(item.id, val)}
+                                >
+                                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white h-9">
+                                        <SelectValue placeholder="Selecione o grupo" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-gray-800 border-gray-700 text-white max-h-60">
+                                        {groupMetrics.map((group: any) => (
+                                            <SelectItem key={group.name} value={group.name}>
+                                                {group.name}
+                                            </SelectItem>
+                                        ))}
+                                        {groupMetrics.length === 0 && (
+                                            <div className="p-2 text-xs text-gray-500 text-center">Nenhum grupo encontrado</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {(item.type === 'soma' || item.type === 'divisor') && (
+                            <div className="md:col-span-3"></div> /* Spacer for alignment */
                         )}
 
-                        {/* GROUP LOGIC */}
-                        {item.type === 'grupo' && (
+                        {/* 3. Colors (Main) - Span 3 */}
+                        {(item.type === 'individual' || item.type === 'grupo' || item.type === 'soma') && (
+                            <div className={cn("md:col-span-3 grid grid-cols-2 gap-2 p-1 rounded", item.type === 'grupo' ? "bg-gray-800/20 border border-gray-700/30" : "")}>
+                                <ColorPickerTrigger
+                                    color={item.bgColor}
+                                    onChange={(c) => onUpdateItem(item.id, { bgColor: c })}
+                                    label="Fundo"
+                                    className="w-24" // Fixed width per user request
+                                />
+                                <TextColorSelector
+                                    color={item.textColor}
+                                    onChange={(c) => onUpdateItem(item.id, { textColor: c })}
+                                    label="Texto"
+                                    previewBgColor={item.bgColor}
+                                />
+                            </div>
+                        )}
+                        {item.type === 'divisor' && (
+                            <div className="md:col-span-3"></div> /* Spacer for alignment if needed */
+                        )}
+
+                        {/* 4. Subitem Colors (Group Only) - Span 3 */}
+                        {item.type === 'grupo' ? (
+                            <div className="md:col-span-3 grid grid-cols-2 gap-2 bg-gray-800/20 p-1 rounded border border-gray-700/30">
+                                <ColorPickerTrigger
+                                    color={item.groupSubitemsBgColor}
+                                    onChange={(c) => onUpdateItem(item.id, { groupSubitemsBgColor: c })}
+                                    label="Fundo (Sub)"
+                                    className="w-24"
+                                />
+                                <TextColorSelector
+                                    color={item.groupSubitemsTextColor}
+                                    onChange={(c) => onUpdateItem(item.id, { groupSubitemsTextColor: c })}
+                                    label="Texto (Sub)"
+                                    previewBgColor={item.groupSubitemsBgColor}
+                                />
+                            </div>
+                        ) : (
+                            // Spacer for 4th column for non-group items to keep grid aligned if needed, or empty
+                            <div className="md:col-span-3"></div>
+                        )}
+
+                        {/* ROW 2: Names and Specific Configs */}
+
+                        {/* INDIVIDUAL: Just Name */}
+                        {item.type === 'individual' && (
+                            <div className="space-y-1 md:col-span-12">
+                                <Label className="text-xs text-gray-400">Nome na Visualização</Label>
+                                <Input
+                                    value={item.label || ''}
+                                    onChange={(e) => onUpdateItem(item.id, { label: e.target.value })}
+                                    placeholder="Ex: Total de Vendas"
+                                    className="bg-gray-800 border-gray-600 text-white h-9 w-full"
+                                />
+                            </div>
+                        )}
+
+                        {/* GRUPO: Name + Subitems */}
+                        {item.type === 'grupo' && item.column && (
                             <>
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-gray-400">Coluna (Grupo)</Label>
-                                    <Select
-                                        value={item.column}
-                                        onValueChange={(val) => handleGroupColumnChange(item.id, val)}
-                                    >
-                                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white h-9">
-                                            <SelectValue placeholder="Selecione o grupo" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700 text-white max-h-60">
-                                            {groupMetrics.map((group: any) => (
-                                                <SelectItem key={group.name} value={group.name}>
-                                                    {group.name}
-                                                </SelectItem>
-                                            ))}
-                                            {groupMetrics.length === 0 && (
-                                                <div className="p-2 text-xs text-gray-500 text-center">Nenhum grupo encontrado</div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                {/* Group Name */}
+                                <div className="space-y-1 md:col-span-12">
+                                    <Label className="text-xs text-gray-400">Nome do Grupo</Label>
+                                    <Input
+                                        value={item.groupName || ''}
+                                        onChange={(e) => onUpdateItem(item.id, { groupName: e.target.value })}
+                                        placeholder="Ex: Por Operador"
+                                        className="bg-gray-800 border-gray-600 text-white h-9 w-full"
+                                    />
                                 </div>
 
-                                {item.column && (
-                                    <>
-                                        <div className="space-y-1 md:col-span-2">
-                                            <Label className="text-xs text-gray-400">Nome do Grupo</Label>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    value={item.groupName || ''}
-                                                    onChange={(e) => onUpdateItem(item.id, { groupName: e.target.value })}
-                                                    placeholder="Ex: Por Operador"
-                                                    className="bg-gray-800 border-gray-600 text-white h-9 flex-1"
-                                                />
-                                                <ColorPickerTrigger
-                                                    color={item.bgColor}
-                                                    onChange={(c) => onUpdateItem(item.id, { bgColor: c })}
-                                                    label="Fundo"
-                                                />
-                                                <TextColorSelector
-                                                    color={item.textColor}
-                                                    onChange={(c) => onUpdateItem(item.id, { textColor: c })}
-                                                    label="Texto"
-                                                    previewBgColor={item.bgColor}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1 md:col-span-2">
-                                            <Label className="text-xs text-gray-400">Estilo Subitens</Label>
-                                            <div className="flex gap-2">
-                                                <div className="flex gap-2 w-full">
-                                                    <ColorPickerTrigger
-                                                        color={item.groupSubitemsBgColor}
-                                                        onChange={(c) => onUpdateItem(item.id, { groupSubitemsBgColor: c })}
-                                                        label="Fundo Sub"
-                                                    />
-                                                    <TextColorSelector
-                                                        color={item.groupSubitemsTextColor}
-                                                        onChange={(c) => onUpdateItem(item.id, { groupSubitemsTextColor: c })}
-                                                        label="Texto Sub"
-                                                        previewBgColor={item.groupSubitemsBgColor}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {item.column && currentGroupConfig && (
-                                    <div className="md:col-span-2 bg-gray-900/50 p-3 rounded border border-gray-800 mt-2">
+                                {currentGroupConfig && (
+                                    <div className="md:col-span-12 bg-gray-900/50 p-3 rounded border border-gray-800 mt-2">
                                         <div className="flex justify-between items-center mb-2">
                                             <Label className="text-xs text-gray-400 font-medium">Subitens ({item.activeSubItems?.length || 0})</Label>
 
@@ -394,33 +397,20 @@ function SortableItem({ item, onRemoveItem, onUpdateItem, handleGroupColumnChang
                             </>
                         )}
 
-                        {/* SOMA LOGIC */}
+                        {/* SOMA: Name + Items List */}
                         {item.type === 'soma' && (
                             <>
-                                <div className="space-y-1 md:col-span-2">
+                                <div className="space-y-1 md:col-span-12">
                                     <Label className="text-xs text-gray-400">Nome na Visualização</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={item.label || ''}
-                                            onChange={(e) => onUpdateItem(item.id, { label: e.target.value })}
-                                            placeholder="Ex: Soma Total"
-                                            className="bg-gray-800 border-gray-600 text-white h-9 flex-1"
-                                        />
-                                        <ColorPickerTrigger
-                                            color={item.bgColor}
-                                            onChange={(c) => onUpdateItem(item.id, { bgColor: c })}
-                                            label="Fundo"
-                                        />
-                                        <TextColorSelector
-                                            color={item.textColor}
-                                            onChange={(c) => onUpdateItem(item.id, { textColor: c })}
-                                            label="Texto"
-                                            previewBgColor={item.bgColor}
-                                        />
-                                    </div>
+                                    <Input
+                                        value={item.label || ''}
+                                        onChange={(e) => onUpdateItem(item.id, { label: e.target.value })}
+                                        placeholder="Ex: Soma Total"
+                                        className="bg-gray-800 border-gray-600 text-white h-9 w-full"
+                                    />
                                 </div>
 
-                                <div className="md:col-span-2 space-y-2 mt-2 bg-gray-900/50 p-3 rounded border border-gray-800">
+                                <div className="md:col-span-12 space-y-2 mt-2 bg-gray-900/50 p-3 rounded border border-gray-800">
                                     <div className="flex justify-between items-center mb-1">
                                         <Label className="text-xs text-gray-400 font-medium">Itens da Soma</Label>
                                         <Button
@@ -492,6 +482,73 @@ export function VisualizationConfigModal({ open, onOpenChange, individualMetrics
     // No need to filter type anymore, we have the list directly
     const availableMetrics = individualMetrics
     const somaAvailableMetrics = allMetricsNames
+
+    // Load existing rules on open
+    useEffect(() => {
+        if (open) {
+            fetchRules()
+        }
+    }, [open])
+
+    const fetchRules = async () => {
+        setLoading(true)
+        try {
+            const response = await fetch('/api/admin/get-rules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ column_name: 'visualizar' })
+            })
+            const data = await response.json()
+
+            if (data.found && data.rules && Array.isArray(data.rules)) {
+                const loadedItems: VisualizationItem[] = data.rules.map((r: any) => {
+                    const item: VisualizationItem = {
+                        id: genId(),
+                        type: r.tipo_item === 'linha' ? 'divisor' : r.tipo_item,
+                        bgColor: r.cor_de_fundo,
+                        textColor: r.cor_do_texto
+                    }
+
+                    if (item.type === 'individual') {
+                        item.label = r.nome_visualizacao
+                        item.column = r.coluna // Restore column
+                    } else if (item.type === 'grupo') {
+                        item.column = r.coluna // Restore column for group
+                        item.groupName = r.nome_visualizacao
+                        item.groupSubitemsBgColor = r.cor_de_fundo_subitem
+                        item.groupSubitemsTextColor = r.cor_do_texto_subitem
+
+                        // Map subItems
+                        if (r.subitens && Array.isArray(r.subitens)) {
+                            item.activeSubItems = r.subitens.map((s: any) => s.item_relacionado)
+                            item.subItemsNames = r.subitens.reduce((acc: any, s: any) => {
+                                acc[s.item_relacionado] = s.nome_visualizacao
+                                return acc
+                            }, {})
+                        }
+                    } else if (item.type === 'soma') {
+                        item.label = r.nome_visualizacao
+                        item.sumItems = r.colunas_soma
+                    }
+
+                    return item
+                })
+                setItems(loadedItems)
+            } else {
+                // Initialize with empty or default if nothing found? 
+                // If nothing found, keep empty or maybe the default empty state is fine.
+                // Ideally we don't clear if there was a temporary network error, but here we assume if not found/error distinct logic.
+                // If not found (new), items = [] is correct.
+                if (data.found === false) {
+                    setItems([])
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching visualization rules:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -626,15 +683,74 @@ export function VisualizationConfigModal({ open, onOpenChange, individualMetrics
         }))
     }
 
-    const handleSave = () => {
-        console.log('Regras de visualização (Visual Only):', items)
-        // Placeholder save logic
-        onOpenChange(false)
+    const [loading, setLoading] = useState(false)
+
+    const handleSave = async () => {
+        setLoading(true)
+        try {
+            // Map items to the requested schema
+            const mappedItems = items.map(item => {
+                const baseItem: any = {
+                    tipo_item: item.type === 'divisor' ? 'linha' : item.type,
+                }
+
+                if (item.type === 'individual') {
+                    baseItem.nome_visualizacao = item.label
+                    baseItem.cor_de_fundo = item.bgColor
+                    baseItem.cor_do_texto = item.textColor
+                    baseItem.coluna = item.column // Preserving column name to ensure functionality
+                } else if (item.type === 'grupo') {
+                    baseItem.coluna = item.column // Add column mapping for group
+                    baseItem.nome_visualizacao = item.groupName
+                    baseItem.cor_de_fundo = item.bgColor
+                    baseItem.cor_do_texto = item.textColor
+                    baseItem.cor_de_fundo_subitem = item.groupSubitemsBgColor
+                    baseItem.cor_do_texto_subitem = item.groupSubitemsTextColor
+
+                    // Map subitems
+                    baseItem.subitens = (item.activeSubItems || []).map(originalName => ({
+                        nome_visualizacao: item.subItemsNames?.[originalName] || originalName,
+                        item_relacionado: originalName
+                    }))
+                } else if (item.type === 'soma') {
+                    baseItem.nome_visualizacao = item.label
+                    baseItem.cor_de_fundo = item.bgColor
+                    baseItem.cor_do_texto = item.textColor
+                    baseItem.colunas_soma = item.sumItems || []
+                }
+
+                return baseItem
+            })
+
+            const response = await fetch('/api/admin/save-rules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    column_name: 'visualizar', // Target row name requested
+                    metric_type: 'visualizacao', // Tag type
+                    rules_config: mappedItems
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || 'Erro ao salvar configurações')
+            }
+
+            // Success
+            onOpenChange(false)
+        } catch (err: any) {
+            console.error('Error saving visualization config:', err)
+            // Ideally we show an error message in UI, but standard here seems to be console for now or alert
+            alert(`Erro ao salvar: ${err.message}`)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-4xl h-[95vh] overflow-y-auto">
+            <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-[90vw] md:max-w-7xl h-[95vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Editar Visualização</DialogTitle>
                     <DialogDescription className="text-gray-400">
@@ -700,14 +816,16 @@ export function VisualizationConfigModal({ open, onOpenChange, individualMetrics
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                        disabled={loading}
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSave}
                         className="bg-green-600 hover:bg-green-500 text-white"
+                        disabled={loading}
                     >
-                        Salvar Configuração
+                        {loading ? 'Salvando...' : 'Salvar Configuração'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
