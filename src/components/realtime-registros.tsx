@@ -117,11 +117,17 @@ export default function RealtimeRegistros({ onTableReady, onSaveVisibilityReady 
                         setUpdatedRowId(payload.new.id)
                     } else if (payload.eventType === 'UPDATE') {
                         console.log('[DEBUG REALTIME] UPDATE received for id:', payload.new.id)
-                        setRegistros((prev) =>
-                            prev.map((registro) =>
-                                registro.id === payload.new.id ? (payload.new as Registro) : registro
-                            )
-                        )
+                        setRegistros((prev) => {
+                            const exists = prev.some((registro) => registro.id === payload.new.id)
+                            if (exists) {
+                                return prev.map((registro) =>
+                                    registro.id === payload.new.id ? (payload.new as Registro) : registro
+                                )
+                            } else {
+                                console.log('[DEBUG REALTIME] Update for missing record -> treating as INSERT:', payload.new.id)
+                                return [payload.new as Registro, ...prev]
+                            }
+                        })
                         setUpdatedRowId(payload.new.id)
                     } else if (payload.eventType === 'DELETE') {
                         setRegistros((prev) =>
