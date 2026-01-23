@@ -158,12 +158,6 @@ export default function Home() {
                         Regras das Métricas
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin/metricas" className="w-full cursor-pointer">
-                        <ChartArea className="mr-2 h-4 w-4" />
-                        Ver Métricas
-                      </Link>
-                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
@@ -182,12 +176,37 @@ export default function Home() {
             </div>
 
             <div className="transform transition-all duration-300 hover:scale-105">
-              <Button asChild>
-                <Link href="/recondicionar">
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Recondicionar
-                </Link>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-500/30 hover:border-blue-400/50 bg-blue-500/10 hover:bg-blue-500/20 text-blue-200 hover:text-blue-100 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
+                  >
+                    Utilidades <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem asChild>
+                    <Link href="/metricas" className="w-full cursor-pointer">
+                      <ChartArea className="mr-2 h-4 w-4" />
+                      Métricas
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/recondicionar" className="w-full cursor-pointer">
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Recondicionar
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/emails" className="w-full cursor-pointer">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Emails
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             {isFiltered && (
               <Button

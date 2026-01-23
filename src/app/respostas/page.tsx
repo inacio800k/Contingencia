@@ -80,6 +80,7 @@ function RespostasContent() {
                 const { data, error } = await supabase
                     .from(currentTable)
                     .select('*')
+                    .order('created_at', { ascending: false })
 
                 if (error) {
                     console.error(`Error fetching data for ${currentTable}:`, error)
