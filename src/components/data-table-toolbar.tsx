@@ -1,6 +1,6 @@
 "use client"
 
-import { Table } from "@tanstack/react-table"
+import { Table, SortingState } from "@tanstack/react-table"
 import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,19 @@ export function DataTableToolbar<TData>({
     table,
 }: DataTableToolbarProps<TData>) {
     const isFiltered = table.getState().columnFilters.length > 0
+
+    // Check if sorting is different from default (Data descending)
+    const sorting = table.getState().sorting
+    const isDefaultSort = sorting.length === 1 &&
+        sorting[0].id === 'data' &&
+        sorting[0].desc === true
+    const isSortedDirty = !isDefaultSort
+
+    // Debug logging
+    // console.log('[Toolbar] Render', { isFiltered, dragging: false, sorting, isDefaultSort, showReset })
+
+
+    const showReset = isFiltered || isSortedDirty
 
     const statusOptions = [
         { label: 'Inválido', value: 'Inválido' },
@@ -46,10 +59,18 @@ export function DataTableToolbar<TData>({
                         options={statusOptions}
                     />
                 )}
-                {isFiltered && (
+                {showReset && (
                     <Button
                         variant="ghost"
-                        onClick={() => table.resetColumnFilters()}
+                        onClick={() => {
+                            // alert('Resetando filtros e ordenação') // Visual confirmation
+                            console.log('[Toolbar] Reset clicked')
+                            table.resetColumnFilters()
+                            // setTimeout to ensure state updates don't conflict
+                            setTimeout(() => {
+                                table.setSorting([{ id: 'data', desc: true }])
+                            }, 0)
+                        }}
                         className="h-8 px-2 lg:px-3"
                     >
                         Limpar

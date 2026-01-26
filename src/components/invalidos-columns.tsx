@@ -271,7 +271,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'id',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="ID" />,
         cell: ({ row, column, table }) => {
             const rowId = String(row.original.id)
             const columnId = column.id
@@ -302,7 +302,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'data',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DATA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DATA" />,
         cell: ({ row, column, table }) => {
             const date = new Date(row.getValue('data'))
             const formatted = format(date, 'dd/MM/yyyy HH:mm:ss')
@@ -335,7 +335,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'ultima_att',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="ÚLTIMA ALT." />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="ÚLTIMA ALT." />,
         cell: ({ row, column, table }) => {
             const date = new Date(row.getValue('ultima_att'))
             const formatted = format(date, 'dd/MM/yyyy HH:mm:ss')
@@ -369,7 +369,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'operador',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="OPERADOR" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="OPERADOR" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -377,7 +377,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_de_conta',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CONTA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CONTA" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -385,7 +385,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_chip',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="TIPO CHIP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="TIPO CHIP" />,
         cell: EditableCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -394,7 +394,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'valor',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="VALOR" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="VALOR" />,
         cell: EditableCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -403,7 +403,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'dispositivo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DISP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DISP" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -411,7 +411,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'instancia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="INST" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="INST" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -419,7 +419,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'numero',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="NÚMERO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="NÚMERO" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -427,7 +427,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="STATUS" />,
         cell: StatusCell,
         filterFn: (row, id, filterValue) => {
             const cellValue = row.getValue(id) as string
@@ -437,7 +437,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'info',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="INFO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="INFO" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -445,7 +445,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'obs',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="OBS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="OBS" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -453,7 +453,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tokens_uazapi',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="TOKENS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="TOKENS" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -461,7 +461,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'waha_dia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="WAHA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="WAHA" />,
         cell: DatePickerCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -470,7 +470,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'caiu_dia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CAIU" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CAIU" />,
         cell: DatePickerCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -479,7 +479,7 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'codigo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CÓDIGO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CÓDIGO" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))

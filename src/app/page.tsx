@@ -67,21 +67,32 @@ export default function Home() {
   const handleClearFilters = () => {
     if (table) {
       table.resetColumnFilters()
+      // Reset sorting to default (Data Descending)
+      table.setSorting([{ id: 'data', desc: true }])
     }
   }
 
   // Update isFiltered when table changes
   useEffect(() => {
     if (table) {
-      const updateFilterStatus = () => {
-        setIsFiltered(table.getState().columnFilters.length > 0)
+      const updateButtonVisibility = () => {
+        const hasFilters = table.getState().columnFilters.length > 0
+
+        // Check sorting
+        const sorting = table.getState().sorting
+        const isDefaultSort = sorting.length === 1 &&
+          sorting[0].id === 'data' &&
+          sorting[0].desc === true
+        const isSortedDirty = !isDefaultSort
+
+        setIsFiltered(hasFilters || isSortedDirty)
       }
 
       // Initial check
-      updateFilterStatus()
+      updateButtonVisibility()
 
-      // Set up interval to check for filter changes
-      const interval = setInterval(updateFilterStatus, 100)
+      // Set up interval to check for changes
+      const interval = setInterval(updateButtonVisibility, 100)
 
       return () => clearInterval(interval)
     }

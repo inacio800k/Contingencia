@@ -1,6 +1,6 @@
 'use client'
 
-import { Column, ColumnDef, Row, Table, CellContext } from '@tanstack/react-table'
+import { Column, ColumnDef, Row, Table, CellContext, SortingState } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ChevronsUpDown, Check, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HistoryViewer } from "@/components/history-viewer"
@@ -53,11 +53,13 @@ declare module '@tanstack/react-table' {
 interface DataTableColumnHeaderProps<TData, TValue>
     extends React.HTMLAttributes<HTMLDivElement> {
     column: Column<TData, TValue>
+    table: Table<TData>
     title: string
 }
 
 export function DataTableColumnHeader<TData, TValue>({
     column,
+    table,
     title,
     className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
@@ -93,6 +95,34 @@ export function DataTableColumnHeader<TData, TValue>({
 
     const selectedValues = new Set(currentFilterValue || defaultValues)
 
+    const toggleSorting = (column: Column<TData, TValue>) => {
+        const isSorted = column.getIsSorted() // 'asc' | 'desc' | false
+
+        let nextDirection: 'asc' | 'desc' | undefined
+
+        if (!isSorted) {
+            nextDirection = 'asc'
+        } else if (isSorted === 'asc') {
+            nextDirection = 'desc'
+        } else {
+            nextDirection = undefined // Cycle to none
+        }
+
+        const currentSorting = table.getState().sorting
+        // Remove this column from existing sorts to avoid duplicates or to remove it if direction is undefined
+        const newSorting = currentSorting.filter((s) => s.id !== column.id)
+
+        if (nextDirection) {
+            // Add as primary sort (first in array)
+            newSorting.unshift({
+                id: column.id,
+                desc: nextDirection === 'desc'
+            })
+        }
+
+        table.setSorting(newSorting)
+    }
+
     return (
         <div className={cn('flex items-center space-x-2', className)}>
             <div className="flex items-center space-x-1">
@@ -100,7 +130,7 @@ export function DataTableColumnHeader<TData, TValue>({
                     variant="ghost"
                     size="sm"
                     className="-ml-3 h-8 data-[state=open]:bg-accent"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                    onClick={() => toggleSorting(column)}
                 >
                     <span>{title}</span>
                     {column.getIsSorted() === 'desc' ? (
@@ -977,7 +1007,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'id',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="ID" />,
         cell: ({ row }) => {
             return (
                 <div className="flex justify-center">
@@ -999,7 +1029,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'data',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DATA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DATA" />,
         cell: ({ row, column, table }) => {
             const date = new Date(row.getValue('data'))
             const formatted = format(date, 'dd/MM/yyyy HH:mm:ss')
@@ -1032,7 +1062,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'ultima_att',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="ÚLTIMA ALT." />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="ÚLTIMA ALT." />,
         cell: ({ row, column, table }) => {
             const date = new Date(row.getValue('ultima_att'))
             const formatted = format(date, 'dd/MM/yyyy HH:mm:ss')
@@ -1066,7 +1096,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'operador',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="OPERADOR" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="OPERADOR" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1074,7 +1104,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_de_conta',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CONTA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CONTA" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1082,7 +1112,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_chip',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="TIPO CHIP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="TIPO CHIP" />,
         cell: EditableCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -1091,7 +1121,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'valor',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="VALOR" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="VALOR" />,
         cell: EditableCell,
         enableHiding: true,
         filterFn: (row, id, value) => {
@@ -1100,7 +1130,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'dispositivo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DISP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DISP" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1108,7 +1138,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'instancia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="INST" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="INST" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1116,7 +1146,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'numero',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="NÚMERO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="NÚMERO" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1124,7 +1154,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="STATUS" />,
         cell: StatusCell,
         filterFn: (row, id, filterValue) => {
             const cellValue = row.getValue(id) as string
@@ -1136,7 +1166,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'info',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="INFO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="INFO" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1144,7 +1174,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'obs',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="OBS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="OBS" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1152,7 +1182,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tokens_uazapi',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="TOKENS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="TOKENS" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -1160,7 +1190,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         id: 'waha_dia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="WAHA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="WAHA" />,
         accessorFn: (row) => row.waha_dia ? format(new Date(row.waha_dia), 'dd/MM/yyyy') : null,
         cell: DatePickerCell,
         enableHiding: true,
@@ -1170,7 +1200,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         id: 'caiu_dia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CAIU" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CAIU" />,
         accessorFn: (row) => row.caiu_dia ? format(new Date(row.caiu_dia), 'dd/MM/yyyy') : null,
         cell: DatePickerCell,
         enableHiding: true,
@@ -1180,7 +1210,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         id: 'dife',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DIFE" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DIFE" />,
         accessorFn: (row) => {
             try {
                 const wahaValue = row.waha_dia
@@ -1227,7 +1257,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         id: 'data_s_hora',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DATA S. HORA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="DATA S. HORA" />,
         accessorFn: (row) => row.data.substring(0, 10),
         cell: ({ row, column, table }) => {
             const rowId = String(row.original.id)
@@ -1257,7 +1287,7 @@ export const columns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'codigo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CÓDIGO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} table={table} title="CÓDIGO" />,
         cell: CodigoCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
