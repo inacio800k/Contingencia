@@ -158,6 +158,11 @@ export default function Home() {
                         Regras das Métricas
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/editar-respostas" className="w-full cursor-pointer">
+                        Editar Respostas
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>

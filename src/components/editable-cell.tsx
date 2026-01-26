@@ -12,6 +12,8 @@ interface EditableCellProps {
     isEditing: boolean
     canEdit: boolean
     replaceContent?: boolean // New prop
+    preventBackspaceClear?: boolean
+    preventTypeToEdit?: boolean
     onSelect: (rowId: string, columnId: string) => void
     onStartEdit: (rowId: string, columnId: string, replaceContent?: boolean) => void
     onSave: (rowId: string, columnId: string, newValue: string) => Promise<void>
@@ -28,6 +30,8 @@ export function EditableCell({
     isEditing,
     canEdit,
     replaceContent, // Destructure new prop
+    preventBackspaceClear,
+    preventTypeToEdit,
     onSelect,
     onStartEdit,
     onSave,
@@ -89,6 +93,8 @@ export function EditableCell({
 
             // Alphanumeric: Start editing (replace content)
             if (canEdit && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (preventTypeToEdit) return // Block implicit edit start
+
                 e.preventDefault()
                 setEditValue(e.key)
                 onStartEdit(rowId, columnId, true)
@@ -96,7 +102,7 @@ export function EditableCell({
             }
 
             // Backspace: Clear content
-            if (e.key === 'Backspace' && canEdit) {
+            if (e.key === 'Backspace' && canEdit && !preventBackspaceClear) {
                 e.preventDefault()
                 // Optimistically clear content
                 await onSave(rowId, columnId, '')
