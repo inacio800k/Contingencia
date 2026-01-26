@@ -15,6 +15,7 @@ export type Registro = {
     waha_dia: string
     caiu_dia: string
     ultima_att: string
+    tokens_uazapi: string
 }
 
 

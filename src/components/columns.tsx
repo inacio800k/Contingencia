@@ -482,39 +482,115 @@ const CodigoCell = (props: CellContext<Registro, unknown>) => {
                                         }
 
                                         setIsCreating(true)
+                                        setIsCreating(true)
                                         try {
-                                            // Step 1: Init instance
-                                            const initResponse = await fetch('https://levezaativasite.uazapi.com/instance/init', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Accept': 'application/json',
-                                                    'Content-Type': 'application/json',
-                                                    'admintoken': 'JssNSqzWEMzUlBWQ3eTDPm5x14xhqc200awasgxKyOcVAdETqV'
-                                                },
-                                                body: JSON.stringify({
-                                                    name: codigo,
-                                                    systemName: 'levezaativasite'
+                                            const existingToken = row.original.tokens_uazapi
+
+                                            let tokenToUse = existingToken
+                                            let shouldInit = true
+
+                                            if (existingToken) {
+                                                try {
+                                                    const statusResponse = await fetch('https://levezaativasite.uazapi.com/instance/status', {
+                                                        method: 'GET',
+                                                        headers: {
+                                                            'Accept': 'application/json',
+                                                            'token': existingToken
+                                                        }
+                                                    })
+
+                                                    const statusData = await statusResponse.json()
+
+                                                    // Check for specific error formats
+                                                    if (statusData.error || statusData.message === 'Invalid token.' || statusData.code === 401) {
+                                                        const msg = statusData.message || statusData.error || ''
+                                                        // If invalid token, proceed to init (shouldInit = true)
+                                                        if (JSON.stringify(statusData).includes('Invalid token') || msg === 'Invalid token.') {
+                                                            console.log('Token inválido identificiado, criando nova instância...')
+                                                            // existingToken is invalid, so let shouldInit remain true
+                                                        } else {
+                                                            // Unexpected error
+                                                            alert('Erro ao verificar status: ' + (msg || 'Desconhecido'))
+                                                            return
+                                                        }
+                                                    } else if (statusData.instance) {
+                                                        const status = statusData.instance.status
+                                                        if (status === 'connected') {
+                                                            alert('Essa instância já está conectada')
+                                                            return
+                                                        } else if (status === 'disconnected' || status === 'connecting') {
+                                                            // Reuse token, skip init
+                                                            shouldInit = false
+                                                        } else {
+                                                            // Unknown status, maybe safe to alert?
+                                                            alert(`Status desconhecido: ${status}`)
+                                                            return
+                                                        }
+                                                    } else {
+                                                        // Unexpected response structure
+                                                        console.error('Resposta inesperada:', statusData)
+                                                        alert(`Resposta inesperada ao verificar status: ${JSON.stringify(statusData)}`)
+                                                        return
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Error checking status:', err)
+                                                    alert('Erro inesperado ao verificar status.')
+                                                    return
+                                                }
+                                            }
+
+                                            if (shouldInit) {
+                                                // Step 1: Init instance
+                                                const initResponse = await fetch('https://levezaativasite.uazapi.com/instance/init', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Accept': 'application/json',
+                                                        'Content-Type': 'application/json',
+                                                        'admintoken': 'JssNSqzWEMzUlBWQ3eTDPm5x14xhqc200awasgxKyOcVAdETqV'
+                                                    },
+                                                    body: JSON.stringify({
+                                                        name: codigo,
+                                                        systemName: 'levezaativasite'
+                                                    })
                                                 })
-                                            })
 
-                                            const initData = await initResponse.json()
+                                                const initData = await initResponse.json()
 
-                                            // Check struct based on description: "campo instance e dentro de instance vai ter um campo token"
-                                            const token = initData.instance?.token || initData.token
+                                                // Check struct based on description: "campo instance e dentro de instance vai ter um campo token"
+                                                const token = initData.instance?.token || initData.token
 
-                                            if (!token) {
-                                                console.error('Init response:', initData)
-                                                alert('Erro: Token não encontrado na resposta de inicialização.')
+                                                if (!token) {
+                                                    console.error('Init response:', initData)
+                                                    alert('Erro: Token não encontrado na resposta de inicialização.')
+                                                    return
+                                                }
+
+                                                tokenToUse = token
+
+                                                // Save token to database
+                                                const { error: tokenError } = await supabase
+                                                    .from('registros')
+                                                    .update({ tokens_uazapi: token })
+                                                    .eq('id', row.original.id)
+
+                                                if (tokenError) {
+                                                    console.error('Error saving Uazapi token:', tokenError)
+                                                }
+                                            }
+
+                                            // Step 2: Connect instance (Always needed if not connected)
+                                            // Ensure we have a token
+                                            if (!tokenToUse) {
+                                                alert('Erro: Nenhum token disponível para conexão.')
                                                 return
                                             }
 
-                                            // Step 2: Connect instance
                                             const connectResponse = await fetch('https://levezaativasite.uazapi.com/instance/connect', {
                                                 method: 'POST',
                                                 headers: {
                                                     'Accept': 'application/json',
                                                     'Content-Type': 'application/json',
-                                                    'token': token
+                                                    'token': tokenToUse
                                                 },
                                                 body: JSON.stringify({})
                                             })
@@ -534,9 +610,6 @@ const CodigoCell = (props: CellContext<Registro, unknown>) => {
                                                     setQrCodeUrl(imageUrl)
                                                     setShowPopover(false)
                                                     setShowQrDialog(true)
-                                                    // No polling for Uazapi as per instructions? User only mentioned Waha logic "Criar Sessão"
-                                                    // "quando clico em Criar Sessão... para criar a sessão no waha"
-                                                    // So Uazapi is excluded from polling logic.
                                                 } else {
                                                     alert('Erro: QR code vazio após processamento.')
                                                 }
@@ -1072,6 +1145,14 @@ export const columns: ColumnDef<Registro>[] = [
     {
         accessorKey: 'obs',
         header: ({ column }) => <DataTableColumnHeader column={column} title="OBS" />,
+        cell: EditableCell,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
+        accessorKey: 'tokens_uazapi',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="TOKENS" />,
         cell: EditableCell,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))

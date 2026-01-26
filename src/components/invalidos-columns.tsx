@@ -452,6 +452,14 @@ export const invalidosColumns: ColumnDef<Registro>[] = [
         },
     },
     {
+        accessorKey: 'tokens_uazapi',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="TOKENS" />,
+        cell: EditableCell,
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id))
+        },
+    },
+    {
         accessorKey: 'waha_dia',
         header: ({ column }) => <DataTableColumnHeader column={column} title="WAHA" />,
         cell: DatePickerCell,
