@@ -66,6 +66,7 @@ interface DataTableProps<TData, TValue> {
     initialSorting?: SortingState
     disableStickyHeader?: boolean
     pageSize?: number
+    enableColumnOrdering?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -83,6 +84,7 @@ export function DataTable<TData, TValue>({
     initialSorting,
     disableStickyHeader = false,
     pageSize = 50,
+    enableColumnOrdering = true,
 }: DataTableProps<TData, TValue>) {
     const [rowSelection, setRowSelection] = React.useState({})
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
@@ -109,13 +111,6 @@ export function DataTable<TData, TValue>({
     const headerRef = React.useRef<HTMLTableSectionElement>(null)
     const fixedHeaderRef = React.useRef<HTMLDivElement>(null)
     const fixedScrollbarRef = React.useRef<HTMLDivElement>(null)
-
-    // BOTH visibility and order saves are now handled DIRECTLY:
-    // - Visibility: via DataTableViewOptions onClick
-    // - Order: via handleDragEnd below
-    // NO useEffect watching state changes needed!
-
-    // Initialize status filter logic removed per user request (show all by default)
 
     // Scroll detection for sticky header and scrollbar
     React.useEffect(() => {
@@ -253,15 +248,6 @@ export function DataTable<TData, TValue>({
                     }
 
                     // For numero, check creating date
-                    // If old record (< 2026-01-09), keep using last 4 digits logic or full number?
-                    // Wait, previous logic was:
-                    // If creating_at >= 2026-01-09, use FULL number.
-                    // Else use last 4 digits.
-                    // But we don't have created_at easily accessible here, it's usually 'data' column but formatted
-                    // Actually, let's look at how we implemented it before.
-
-                    // We need to check the date relative to 2026-01-09.
-                    // Assuming 'data' field is the creation date.
                     const recordDate = new Date(currentRow.data)
                     const CUTOFF_DATE = new Date('2026-01-09T00:00:00-03:00')
 
@@ -295,14 +281,9 @@ export function DataTable<TData, TValue>({
 
             if (!returnedData || returnedData.length === 0) {
                 console.warn('[DataTable] Update succeeded but returned no data. Check RLS or IDs.')
-                // Don't alert immediately as RLS might return empty data but still update? 
-                // Actually with .select(), if it updates, it should return data if RLS allows select (which it does).
-                // If it returns empty, it usually means no row matched the ID.
             } else {
                 console.log('[DataTable] Save successful:', returnedData[0])
             }
-
-
 
         } catch (err: any) {
             console.error('Error saving cell:', err)
@@ -379,7 +360,7 @@ export function DataTable<TData, TValue>({
             columnVisibility,
             rowSelection,
             columnFilters,
-            columnOrder,
+            columnOrder: enableColumnOrdering ? columnOrder : undefined, // Only pass order if enabled
             globalFilter,
         },
         onGlobalFilterChange: setGlobalFilter,
@@ -394,7 +375,7 @@ export function DataTable<TData, TValue>({
         onColumnFiltersChange: setColumnFilters,
         // BOTH visibility and order are managed internally, saved only from explicit user actions
         onColumnVisibilityChange: setColumnVisibility,
-        onColumnOrderChange: setColumnOrder,
+        onColumnOrderChange: enableColumnOrdering ? setColumnOrder : undefined,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -447,56 +428,52 @@ export function DataTable<TData, TValue>({
         }
     }
 
-    return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-        >
-            <div className="space-y-4 pb-6">
-                {/* Fixed Header Clone - appears when scrolling */}
-                {isHeaderFixed && (
-                    <div
-                        ref={fixedHeaderRef}
-                        className="fixed top-[56px] left-0 right-0 z-40 overflow-x-auto bg-gray-900 border-b border-gray-800"
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
-                        <style jsx>{`
+    const TableContent = () => (
+        <div className="space-y-4 pb-6">
+            {/* Fixed Header Clone - appears when scrolling */}
+            {isHeaderFixed && (
+                <div
+                    ref={fixedHeaderRef}
+                    className="fixed top-[56px] left-0 right-0 z-40 overflow-x-auto bg-gray-900 border-b border-gray-800"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    <style jsx>{`
                             div::-webkit-scrollbar {
                                 display: none;
                             }
                         `}</style>
-                        <div className="rounded-md border-gray-800 bg-gray-900">
-                            <table className="w-full caption-bottom text-sm">
-                                <thead className="bg-gray-900">
-                                    {table.getHeaderGroups().map((headerGroup) => (
-                                        <tr key={`fixed-${headerGroup.id}`} className="border-b border-gray-800">
-                                            {headerGroup.headers.map((header) => (
-                                                <th
-                                                    key={`fixed-${header.id}`}
-                                                    className="h-12 px-4 text-left align-middle font-medium text-gray-400 border-r border-gray-800/30 last:border-r-0"
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </thead>
-                            </table>
-                        </div>
+                    <div className="rounded-md border-gray-800 bg-gray-900">
+                        <table className="w-full caption-bottom text-sm">
+                            <thead className="bg-gray-900">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <tr key={`fixed-${headerGroup.id}`} className="border-b border-gray-800">
+                                        {headerGroup.headers.map((header) => (
+                                            <th
+                                                key={`fixed-${header.id}`}
+                                                className="h-12 px-4 text-left align-middle font-medium text-gray-400 border-r border-gray-800/30 last:border-r-0"
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </thead>
+                        </table>
                     </div>
-                )}
+                </div>
+            )}
 
-                <div ref={tableContainerRef} className="rounded-md border border-gray-800 bg-gray-900/50 overflow-x-auto">
-                    <Table>
-                        <TableHeader ref={headerRef}>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id} className="border-b border-gray-800 bg-gray-900 hover:bg-gray-900">
+            <div ref={tableContainerRef} className="rounded-md border border-gray-800 bg-gray-900/50 overflow-x-auto w-full">
+                <Table>
+                    <TableHeader ref={headerRef}>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id} className="border-b border-gray-800 bg-gray-900 hover:bg-gray-900">
+                                {enableColumnOrdering ? (
                                     <SortableContext
                                         items={columnOrder}
                                         strategy={horizontalListSortingStrategy}
@@ -505,99 +482,134 @@ export function DataTable<TData, TValue>({
                                             <DataTableHeaderCell key={header.id} header={header} />
                                         ))}
                                     </SortableContext>
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                (() => {
-                                    // Calculate duplicates once for the current page/view
-                                    const allRows = table.getCoreRowModel().rows
-                                    const numberCounts = new Map<string, number>()
-                                    const codigoCounts = new Map<string, number>()
-
-                                    allRows.forEach(row => {
-                                        const numero = (row.original as Registro).numero
-                                        if (numero) {
-                                            numberCounts.set(numero, (numberCounts.get(numero) || 0) + 1)
-                                        }
-                                        const codigo = (row.original as Registro).codigo
-                                        if (codigo) {
-                                            codigoCounts.set(codigo, (codigoCounts.get(codigo) || 0) + 1)
-                                        }
-                                    })
-
-                                    return table.getRowModel().rows.map((row) => {
-                                        const numero = (row.original as Registro).numero
-                                        const codigo = (row.original as Registro).codigo
-
-                                        const isNumberDuplicate = numero && (numberCounts.get(numero) || 0) > 1
-                                        const isCodigoDuplicate = codigo && (codigoCounts.get(codigo) || 0) > 1
-
-                                        let rowClassName = `border-b border-gray-800/50 hover:bg-gray-800/30 ${(row.original as Registro).id === updatedRowId ? 'animate-pulse bg-blue-900/20' : ''}`
-
-                                        if (isCodigoDuplicate) {
-                                            rowClassName += ' bg-red-500/20 hover:bg-red-500/30'
-                                        } else if (isNumberDuplicate) {
-                                            rowClassName += ' bg-purple-500/20 hover:bg-purple-500/30'
-                                        }
-
-                                        // Apply custom row class from meta if provided
-                                        if (table.options.meta?.getRowClassName) {
-                                            // @ts-ignore
-                                            const customClass = table.options.meta.getRowClassName(row)
-                                            if (customClass) {
-                                                rowClassName += ` ${customClass}`
-                                            }
-                                        }
-
-                                        return (
-                                            <TableRow
-                                                key={row.id}
-                                                data-state={row.getIsSelected() && 'selected'}
-                                                className={rowClassName}
+                                ) : (
+                                    <>
+                                        {headerGroup.headers.map((header) => (
+                                            <TableHead
+                                                key={header.id}
+                                                colSpan={header.colSpan}
+                                                className="border-r border-gray-800 last:border-r-0 relative group"
                                             >
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <TableCell key={cell.id} className="border-r border-gray-800/30 last:border-r-0">
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        )
-                                    })
-                                })()
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="h-24 text-center"
-                                    >
-                                        Sem resultados.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-                <DataTablePagination table={table} />
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1">
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                    </div>
+                                                </div>
+                                            </TableHead>
+                                        ))}
+                                    </>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            (() => {
+                                // Calculate duplicates once for the current page/view
+                                const allRows = table.getCoreRowModel().rows
+                                const numberCounts = new Map<string, number>()
+                                const codigoCounts = new Map<string, number>()
 
-                {/* Bulk Edit Toolbar - appears when rows are selected */}
-                <BulkEditToolbar
-                    table={table}
-                    onBulkEdit={() => setBulkEditOpen(true)}
-                />
+                                allRows.forEach(row => {
+                                    const numero = (row.original as Registro).numero
+                                    if (numero) {
+                                        numberCounts.set(numero, (numberCounts.get(numero) || 0) + 1)
+                                    }
+                                    const codigo = (row.original as Registro).codigo
+                                    if (codigo) {
+                                        codigoCounts.set(codigo, (codigoCounts.get(codigo) || 0) + 1)
+                                    }
+                                })
 
-                {/* Bulk Edit Modal */}
-                <BulkEditModal
-                    open={bulkEditOpen}
-                    onOpenChange={setBulkEditOpen}
-                    table={table as any}
-                    role={meta?.role || null}
-                />
+                                return table.getRowModel().rows.map((row) => {
+                                    const numero = (row.original as Registro).numero
+                                    const codigo = (row.original as Registro).codigo
+
+                                    const isNumberDuplicate = numero && (numberCounts.get(numero) || 0) > 1
+                                    const isCodigoDuplicate = codigo && (codigoCounts.get(codigo) || 0) > 1
+
+                                    let rowClassName = `border-b border-gray-800/50 hover:bg-gray-800/30 ${(row.original as Registro).id === updatedRowId ? 'animate-pulse bg-blue-900/20' : ''}`
+
+                                    if (isCodigoDuplicate) {
+                                        rowClassName += ' bg-red-500/20 hover:bg-red-500/30'
+                                    } else if (isNumberDuplicate) {
+                                        rowClassName += ' bg-purple-500/20 hover:bg-purple-500/30'
+                                    }
+
+                                    // Apply custom row class from meta if provided
+                                    if (table.options.meta?.getRowClassName) {
+                                        // @ts-ignore
+                                        const customClass = table.options.meta.getRowClassName(row)
+                                        if (customClass) {
+                                            rowClassName += ` ${customClass}`
+                                        }
+                                    }
+
+                                    return (
+                                        <TableRow
+                                            key={row.id}
+                                            data-state={row.getIsSelected() && 'selected'}
+                                            className={rowClassName}
+                                        >
+                                            {row.getVisibleCells().map((cell) => (
+                                                <TableCell key={cell.id} className="border-r border-gray-800/30 last:border-r-0">
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    )
+                                })
+                            })()
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-24 text-center"
+                                >
+                                    Sem resultados.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
-        </DndContext>
+            <DataTablePagination table={table} />
+
+            {/* Bulk Edit Toolbar - appears when rows are selected */}
+            <BulkEditToolbar
+                table={table}
+                onBulkEdit={() => setBulkEditOpen(true)}
+            />
+
+            {/* Bulk Edit Modal */}
+            <BulkEditModal
+                open={bulkEditOpen}
+                onOpenChange={setBulkEditOpen}
+                table={table as any}
+                role={meta?.role || null}
+            />
+        </div>
     )
+
+    if (enableColumnOrdering) {
+        return (
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <TableContent />
+            </DndContext>
+        )
+    }
+
+    return <TableContent />
 }

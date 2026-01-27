@@ -327,6 +327,7 @@ export default function ZapsAMaisPage() {
                         columns={readOnlyColumns}
                         data={registros}
                         disableStickyHeader={true}
+                        enableColumnOrdering={false}
                         meta={{
                             userRole: 'admin',
                             getRowClassName: (row: any) => rowColorMap.get(String(row.original.id)) || ''
