@@ -23,7 +23,7 @@ const TIPO_CONTA_MAP: Record<keyof ZapsSobrando, string[]> = {
 const readOnlyColumns: ColumnDef<Registro>[] = [
     {
         accessorKey: 'data',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DATA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="DATA" table={table} />,
         cell: ({ row }) => {
             const val = row.getValue('data')
             if (!val) return <div className="w-[150px] text-muted-foreground">-</div>
@@ -36,7 +36,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'operador',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="OPERADOR" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="OPERADOR" table={table} />,
         cell: ({ row }) => <div>{row.getValue('operador')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -44,7 +44,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'dispositivo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="DISP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="DISP" table={table} />,
         cell: ({ row }) => <div>{row.getValue('dispositivo')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -52,7 +52,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'instancia',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="INST" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="INST" table={table} />,
         cell: ({ row }) => <div>{row.getValue('instancia')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -60,7 +60,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_de_conta',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CONTA" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="CONTA" table={table} />,
         cell: ({ row }) => <div>{row.getValue('tipo_de_conta')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -68,7 +68,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'numero',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="NÚMERO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="NÚMERO" table={table} />,
         cell: ({ row }) => <div>{row.getValue('numero')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -76,7 +76,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="STATUS" table={table} />,
         cell: ({ row }) => <div>{row.getValue('status')}</div>,
         filterFn: (row, id, filterValue) => {
             const cellValue = row.getValue(id) as string
@@ -86,7 +86,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'codigo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="CÓDIGO" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="CÓDIGO" table={table} />,
         cell: ({ row }) => <div>{row.getValue('codigo')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -94,7 +94,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
     },
     {
         accessorKey: 'tipo_chip',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="TIPO CHIP" />,
+        header: ({ column, table }) => <DataTableColumnHeader column={column} title="TIPO CHIP" table={table} />,
         cell: ({ row }) => <div>{row.getValue('tipo_chip')}</div>,
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id))
@@ -105,7 +105,7 @@ const readOnlyColumns: ColumnDef<Registro>[] = [
 export default function ZapsAMaisPage() {
     const [registros, setRegistros] = useState<Registro[]>([])
     const [loading, setLoading] = useState(true)
-    const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
     const fetchData = async () => {
         setLoading(true)
@@ -113,7 +113,7 @@ export default function ZapsAMaisPage() {
             // 1. Fetch dispositivos with excesses
             const { data: dispositivos, error: dispError } = await supabase
                 .from('dispositivos')
-                .select('dispositivo, zaps_sobrando')
+                .select('dispositivo, ideal_0')
 
             if (dispError) throw dispError
 
@@ -124,9 +124,9 @@ export default function ZapsAMaisPage() {
 
             // Filter locally to ensure valid objects
             const validDispositivos = dispositivos.filter((d: any) =>
-                d.zaps_sobrando &&
-                Object.keys(d.zaps_sobrando).length > 0 &&
-                JSON.stringify(d.zaps_sobrando) !== '{}'
+                d.ideal_0 &&
+                Object.keys(d.ideal_0).length > 0 &&
+                JSON.stringify(d.ideal_0) !== '{}'
             )
 
             if (validDispositivos.length === 0) {
@@ -137,23 +137,36 @@ export default function ZapsAMaisPage() {
             // 2. Build Query
             const orConditions: string[] = []
 
+            const IDEAL_TO_DISPLAY_MAP: Record<string, keyof ZapsSobrando> = {
+                num_normal: 'Whats',
+                num_business: 'Whats Business',
+                clone_normal: 'Clone Whats',
+                clone_business: 'Clone Business',
+                num_gb: 'Whats GB'
+            }
+
             validDispositivos.forEach((d: any) => {
                 const deviceName = d.dispositivo
-                const sobras = d.zaps_sobrando as Record<string, Partial<ZapsSobrando>>
+                const ideal0 = d.ideal_0 || {}
 
-                Object.keys(sobras).forEach(instanciaKey => {
-                    const excessTypes = sobras[instanciaKey]
+                Object.keys(ideal0).forEach(instanciaKey => {
+                    const values = ideal0[instanciaKey]
 
                     // Normalize Instance Name: Remove "INS" prefix if present
                     const cleanInstancia = instanciaKey.replace(/^INS/, '')
 
-                    Object.keys(excessTypes).forEach((typeKey) => {
-                        const targetTypes = TIPO_CONTA_MAP[typeKey as keyof ZapsSobrando]
-
-                        if (targetTypes) {
-                            const typesString = `(${targetTypes.map(t => `"${t}"`).join(',')})` // formatting for .in()
-                            const condition = `and(dispositivo.eq."${deviceName}",instancia.eq."${cleanInstancia}",tipo_de_conta.in.${typesString})`
-                            orConditions.push(condition)
+                    Object.entries(values).forEach(([key, value]) => {
+                        // Only consider positive values (excess)
+                        if (typeof value === 'number' && value > 0) {
+                            const uiKey = IDEAL_TO_DISPLAY_MAP[key]
+                            if (uiKey) {
+                                const targetTypes = TIPO_CONTA_MAP[uiKey]
+                                if (targetTypes) {
+                                    const typesString = `(${targetTypes.map(t => `"${t}"`).join(',')})` // formatting for .in()
+                                    const condition = `and(dispositivo.eq."${deviceName}",instancia.eq."${cleanInstancia}",tipo_de_conta.in.${typesString})`
+                                    orConditions.push(condition)
+                                }
+                            }
                         }
                     })
                 })
@@ -164,16 +177,39 @@ export default function ZapsAMaisPage() {
                 return
             }
 
-            // Join all conditions with comma for the OR filter
-            const orFilter = orConditions.join(',')
+            // Helper to chunk array
+            const chunkArray = (array: string[], size: number) => {
+                const result = []
+                for (let i = 0; i < array.length; i += size) {
+                    result.push(array.slice(i, i + size))
+                }
+                return result
+            }
 
-            // 3. Fetch Registros
-            const { data: records, error: regError } = await supabase
-                .from('registros')
-                .select('*')
-                .or(orFilter)
+            // Split conditions into chunks of 15 to avoid URL length limits
+            const chunks = chunkArray(orConditions, 15)
 
-            if (regError) throw regError
+            // Fetch all chunks in parallel
+            const results = await Promise.all(chunks.map(async (chunk) => {
+                const orFilter = chunk.join(',')
+                const { data, error } = await supabase
+                    .from('registros')
+                    .select('*')
+                    .or(orFilter)
+
+                if (error) throw error
+                return data || []
+            }))
+
+            // Combine and deduplicate records (though duplicates shouldn't theoretically happen with this logic)
+            const allRecordsMap = new Map<number, Registro>()
+            results.flat().forEach(record => {
+                if (record && record.id) {
+                    allRecordsMap.set(record.id, record)
+                }
+            })
+
+            const records = Array.from(allRecordsMap.values())
 
             // Helper to get normalized type for sorting
             const getNormalizedTipo = (t: string) => {
@@ -184,7 +220,7 @@ export default function ZapsAMaisPage() {
             }
 
             // Sort Client-side: Dispositivo DESC, Instancia DESC, Tipo de Conta (Normalized) DESC
-            const sortedRecords = (records || []).sort((a, b) => {
+            const sortedRecords = records.sort((a, b) => {
                 // 1. Dispositivo
                 const dispA = a.dispositivo || ''
                 const dispB = b.dispositivo || ''
@@ -274,7 +310,7 @@ export default function ZapsAMaisPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
-                        Atualizado às {lastUpdated.toLocaleTimeString()}
+                        {lastUpdated ? `Atualizado às ${lastUpdated.toLocaleTimeString()}` : 'Carregando...'}
                     </span>
                     <Button variant="outline" size="icon" onClick={fetchData} disabled={loading}>
                         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

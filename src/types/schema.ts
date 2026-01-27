@@ -42,4 +42,5 @@ export type Dispositivo = {
     num_gb: number
     valores_atuais: Record<string, ValoresAtuais>
     zaps_sobrando: Record<string, Partial<ZapsSobrando>>
+    ideal_0: Record<string, ValoresAtuais> // Reusing ValoresAtuais as structure is identical (num_normal, etc)
 }

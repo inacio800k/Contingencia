@@ -27,7 +27,7 @@ export function ZapsSobrandoNotification() {
         try {
             const { data, error } = await supabase
                 .from('dispositivos')
-                .select('dispositivo, zaps_sobrando')
+                .select('dispositivo, ideal_0')
 
             if (error) {
                 console.error('Error fetching zaps sobrando:', error)
@@ -36,17 +36,33 @@ export function ZapsSobrandoNotification() {
 
             if (data) {
                 const formattedItems: ZapsSobrandoItem[] = data
-                    .filter((item: any) => {
-                        // Check if zaps_sobrando exists and is not empty object
-                        return item.zaps_sobrando &&
-                            Object.keys(item.zaps_sobrando).length > 0 &&
-                            JSON.stringify(item.zaps_sobrando) !== '{}'
+                    .map((item: any) => {
+                        const ideal0 = item.ideal_0 || {}
+                        const sobras: Record<string, Partial<ZapsSobrando>> = {}
+
+                        Object.entries(ideal0).forEach(([instancia, values]: [string, any]) => {
+                            const instanceSobras: Partial<ZapsSobrando> = {}
+
+                            // Map ideal_0 keys to UI keys
+                            if (values.num_normal > 0) instanceSobras['Whats'] = values.num_normal
+                            if (values.num_business > 0) instanceSobras['Whats Business'] = values.num_business
+                            if (values.clone_normal > 0) instanceSobras['Clone Whats'] = values.clone_normal
+                            if (values.clone_business > 0) instanceSobras['Clone Business'] = values.clone_business
+                            if (values.num_gb > 0) instanceSobras['Whats GB'] = values.num_gb
+
+                            if (Object.keys(instanceSobras).length > 0) {
+                                sobras[instancia] = instanceSobras
+                            }
+                        })
+
+                        return {
+                            dispositivo: item.dispositivo,
+                            sobras
+                        }
                     })
-                    .map((item: any) => ({
-                        dispositivo: item.dispositivo,
-                        sobras: item.zaps_sobrando
-                    }))
+                    .filter(item => Object.keys(item.sobras).length > 0)
                     .sort((a, b) => a.dispositivo.localeCompare(b.dispositivo, undefined, { numeric: true, sensitivity: 'base' }))
+
                 setItems(formattedItems)
             }
         } catch (error) {
